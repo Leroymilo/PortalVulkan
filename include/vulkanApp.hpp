@@ -47,11 +47,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 static std::vector<char> readFile(const std::string& filename);
 
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
+	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
 };
 
 struct UniformBufferObject {
@@ -94,7 +95,7 @@ class VulkanApp {
 		VkDeviceMemory textureImageMemory;
 		VkImageView textureImageView;
 		VkSampler textureSampler;
-		
+
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
