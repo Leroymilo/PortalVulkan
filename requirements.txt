@@ -1,0 +1,9 @@
+vulkan-tools
+vulkan-loader-devel
+vulkan-validation-layers-devel
+glfw-devel
+glm-devel
+glslc
+libXi-devel
+libXxf86vm-devel
+follow this https://vulkan.lunarg.com/doc/sdk/1.3.268.0/linux/getting_started.html
