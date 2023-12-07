@@ -624,13 +624,13 @@ void VulkanApp::createGraphicsPipeline() {
 	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
 	std::vector<VkDynamicState> dynamicStates = {
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
+		// VK_DYNAMIC_STATE_VIEWPORT,
+		// VK_DYNAMIC_STATE_SCISSOR
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	// dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates = dynamicStates.data();
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -650,24 +650,24 @@ void VulkanApp::createGraphicsPipeline() {
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// For static state
-	// VkViewport viewport{};
-	// viewport.x = 0.0f;
-	// viewport.y = 0.0f;
-	// viewport.width = (float) swapChainExtent.width;
-	// viewport.height = (float) swapChainExtent.height;
-	// viewport.minDepth = 0.0f;
-	// viewport.maxDepth = 1.0f;
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float) swapChainExtent.width;
+	viewport.height = (float) swapChainExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
 
-	// VkRect2D scissor{};
-	// scissor.offset = {0, 0};
-	// scissor.extent = swapChainExtent;
+	VkRect2D scissor{};
+	scissor.offset = {0, 0};
+	scissor.extent = swapChainExtent;
 
 	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.viewportCount = 1;
-	// viewportState.pViewports = &viewport;	// remove if using dynamic state
+	viewportState.pViewports = &viewport;	// remove if using dynamic state
 	viewportState.scissorCount = 1;
-	// viewportState.pScissors = &scissor;		// remove if using dynamic state
+	viewportState.pScissors = &scissor;		// remove if using dynamic state
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -1013,19 +1013,19 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swapChainExtent.width);
-	viewport.height = static_cast<float>(swapChainExtent.height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	// VkViewport viewport{};
+	// viewport.x = 0.0f;
+	// viewport.y = 0.0f;
+	// viewport.width = static_cast<float>(swapChainExtent.width);
+	// viewport.height = static_cast<float>(swapChainExtent.height);
+	// viewport.minDepth = 0.0f;
+	// viewport.maxDepth = 1.0f;
+	// vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-	VkRect2D scissor{};
-	scissor.offset = {0, 0};
-	scissor.extent = swapChainExtent;
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	// VkRect2D scissor{};
+	// scissor.offset = {0, 0};
+	// scissor.extent = swapChainExtent;
+	// vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	// vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
