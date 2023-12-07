@@ -92,6 +92,9 @@ class VulkanApp {
 		
 		VkImage textureImage;
 		VkDeviceMemory textureImageMemory;
+		VkImageView textureImageView;
+		VkSampler textureSampler;
+		
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
@@ -154,6 +157,8 @@ class VulkanApp {
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void createSwapChain();
 
+		VkImageView createImageView(VkImage image, VkFormat format);
+
 		void createImageViews();
 
 		void createRenderPass();
@@ -169,6 +174,10 @@ class VulkanApp {
 
 		VkCommandBuffer beginSingleTimeCommands();
 		void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+		void createBuffer(
+			VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+			VkBuffer& buffer, VkDeviceMemory& bufferMemory
+		);
 
 		void createImage(
 			uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
@@ -182,11 +191,11 @@ class VulkanApp {
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     	void createTextureImage();
 
+		void createTextureImageView();
+
+		void createTextureSampler();
+
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void createBuffer(
-			VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-			VkBuffer& buffer, VkDeviceMemory& bufferMemory
-		);
 		void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     	void createVertexBuffer();
 
