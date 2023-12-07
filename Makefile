@@ -29,7 +29,7 @@ $(OBJ_DIR)/%.o: %.cpp
 .PHONY: test clean
 
 test: HelloTriangle
-	./HelloTriangle
+	./HelloTriangle.x86_64
 
 clean:
 	rm -f HelloTriangle
