@@ -175,7 +175,7 @@ class VulkanApp {
 
 		void createIndexBuffer();
 
-		void createUniformBuffer();
+		void createUniformBuffers();
 
 		void createDescriptorPool();
 
