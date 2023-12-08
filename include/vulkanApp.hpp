@@ -96,6 +96,10 @@ class VulkanApp {
 		VkImageView textureImageView;
 		VkSampler textureSampler;
 
+		VkImage depthImage;
+		VkDeviceMemory depthImageMemory;
+		VkImageView depthImageView;
+
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
@@ -158,7 +162,7 @@ class VulkanApp {
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void createSwapChain();
 
-		VkImageView createImageView(VkImage image, VkFormat format);
+		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		void createImageViews();
 
@@ -172,6 +176,13 @@ class VulkanApp {
 		void createFramebuffers();
 
 		void createCommandPool();
+
+		VkFormat findSupportedFormat(
+			const std::vector<VkFormat>& candidates,
+			VkImageTiling tiling, VkFormatFeatureFlags features
+		);
+		VkFormat findDepthFormat();
+		void createDepthResources();
 
 		VkCommandBuffer beginSingleTimeCommands();
 		void endSingleTimeCommands(VkCommandBuffer commandBuffer);
