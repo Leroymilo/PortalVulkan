@@ -11,6 +11,12 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
+const uint32_t WIDTH = 800;
+const uint32_t HEIGHT = 600;
+
+const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
+
 VkResult CreateDebugUtilsMessengerEXT(
 	VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -53,6 +59,7 @@ struct Vertex {
 
 	static VkVertexInputBindingDescription getBindingDescription();
 	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+	bool operator==(const Vertex& other) const;
 };
 
 struct UniformBufferObject {
@@ -64,8 +71,6 @@ struct UniformBufferObject {
 class VulkanApp {
 	private:
 		GLFWwindow* window;
-		const uint32_t WIDTH = 800;
-		const uint32_t HEIGHT = 600;
 
 		VkInstance instance;
 		VkDebugUtilsMessengerEXT debugMessenger;
@@ -100,6 +105,8 @@ class VulkanApp {
 		VkDeviceMemory depthImageMemory;
 		VkImageView depthImageView;
 
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
@@ -206,6 +213,8 @@ class VulkanApp {
 		void createTextureImageView();
 
 		void createTextureSampler();
+
+		void loadModel();
 
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
