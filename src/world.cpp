@@ -22,6 +22,10 @@ bool World::get_geometry(
 	return true;
 }
 
+void World::get_matrices(GLFWwindow *window, glm::mat4 *proj, glm::mat4 *view) {
+	camera.get_matrices(window, proj, view);
+}
+
 void World::cmd_draw_indexed(VkCommandBuffer &commandBuffer) {
 	for (SimpleBrush &brush :simple_brushes) {
 		brush.cmd_draw_indexed(commandBuffer);
