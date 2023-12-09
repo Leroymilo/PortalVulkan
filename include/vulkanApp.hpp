@@ -8,7 +8,9 @@
 #include <optional>
 #include <vector>
 #include <cstring>
+#include <unordered_map>
 
+#include "texture.hpp"
 #include "world.hpp"
 #include "vertex.hpp"
 
@@ -91,10 +93,8 @@ class VulkanApp {
 
 		VkCommandPool commandPool;
 		
-		VkImage textureImage;
-		VkDeviceMemory textureImageMemory;
-		VkImageView textureImageView;
-		VkSampler textureSampler;
+		std::unordered_map<std::string, Texture> textures;
+		std::unordered_map<std::string, Texture> norm_maps;
 
 		VkImage depthImage;
 		VkDeviceMemory depthImageMemory;
@@ -203,11 +203,8 @@ class VulkanApp {
 			VkImageLayout oldLayout, VkImageLayout newLayout
 		);
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    	void createTextureImage();
-
-		void createTextureImageView();
-
-		void createTextureSampler();
+		Texture createTexture(std::string tex_name);
+		void createTextures();
 
 		void loadModel();
 

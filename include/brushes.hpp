@@ -1,9 +1,12 @@
 #ifndef BRUSHES_HPP
 #define BRUSHES_HPP
 
+#include <vector>
+
 #include <glm/glm.hpp>
 
 #include "../include/vertex.hpp"
+#include "../include/renderInfo.hpp"
 
 class SimpleBrush {
 	private:
@@ -12,16 +15,22 @@ class SimpleBrush {
 
 		uint32_t vertex_offset;
 		uint32_t first_index;
+
+		std::vector<int> descriptor_set_indices;
 	
 	public:
-		SimpleBrush(glm::vec3 min_point, glm::vec3 max_point);
+		std::string tex_name;
+
+		SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string tex_name);
 
 		bool generate_buffers(
 			std::vector<Vertex> *vertices,
 			std::vector<uint32_t> *indices
 		);
+
+		void set_descriptor_sets(std::vector<int> &set_indices);
 		
-		void cmd_draw_indexed(VkCommandBuffer &commandBuffer);
+		void cmd_draw_indexed(RenderInfo &render_info);
 };
 
 #endif //BRUSHES_HPP

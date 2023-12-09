@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 #include "../include/brushes.hpp"
@@ -6,16 +7,8 @@
 const float t = 1.f/3.f;
 const float t2 = 2.f/3.f;
 
-SimpleBrush::SimpleBrush(glm::vec3 min_point, glm::vec3 max_point) {
-	this->min_point = min_point;
-	this->max_point = max_point;
-
-	// if (generate_buffers() != 0) {
-	// 	printf("error while generating simple brush buffers!");
-	// }
-
-	// texture_id = loadDDS("uvtemplate.DDS");
-}
+SimpleBrush::SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string tex_name):
+	min_point(min_point), max_point(max_point), tex_name(tex_name) {}
 
 bool SimpleBrush::generate_buffers(
 			std::vector<Vertex> *vertices,
@@ -165,9 +158,19 @@ bool SimpleBrush::generate_buffers(
 	return true;
 }
 
-void SimpleBrush::cmd_draw_indexed(VkCommandBuffer &commandBuffer) {
+void SimpleBrush::set_descriptor_sets(std::vector<int> &set_indices) {
+	this->descriptor_set_indices = set_indices;
+}
+
+void SimpleBrush::cmd_draw_indexed(RenderInfo &render_info) {
+	vkCmdBindDescriptorSets(
+		render_info.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		render_info.pipeline_layout, 0, 1, &(render_info.descriptor_sets[render_info.current_frame]),
+		0, nullptr
+	);
+
 	vkCmdDrawIndexed(
-		commandBuffer, 36, 1,
+		render_info.command_buffer, 36, 1,
 		first_index, vertex_offset, 0
 	);
 }
