@@ -23,7 +23,7 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(1, 1),git 
+			glm::vec2(1, 1),
 			glm::vec3(0, 1, 0)
 		}, {
 			glm::vec3(max_x, max_y, max_z),
