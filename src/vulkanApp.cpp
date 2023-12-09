@@ -24,11 +24,6 @@
 
 #include "../include/vulkanApp.hpp"
 
-#ifndef offsetof
-// because VSCode can't find it for some reason...
-#define offsetof(s, m) (long)(&(((s*)0)->m))
-#endif
-
 // const std::vector<Vertex> vertices = {
 //     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 //     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
@@ -106,51 +101,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 	return VK_FALSE;
 }
-
-// Vertex methods =================================================================================
-
-VkVertexInputBindingDescription Vertex::getBindingDescription() {
-	VkVertexInputBindingDescription bindingDescription{};
-	bindingDescription.binding = 0;
-	bindingDescription.stride = sizeof(Vertex);
-	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-	return bindingDescription;
-}
-
-std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-	attributeDescriptions[0].binding = 0;
-	attributeDescriptions[0].location = 0;
-	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-	attributeDescriptions[1].binding = 0;
-	attributeDescriptions[1].location = 1;
-	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-	attributeDescriptions[2].binding = 0;
-	attributeDescriptions[2].location = 2;
-	attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-	attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-    return attributeDescriptions;
-}
-
-bool Vertex::operator==(const Vertex& other) const {
-    return pos == other.pos && color == other.color && texCoord == other.texCoord;
-}
-
-template<> struct std::hash<Vertex> {
-	std::size_t operator()(Vertex const& vertex) const {
-		return ((std::hash<glm::vec3>()(vertex.pos) ^
-				(std::hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-				(std::hash<glm::vec2>()(vertex.texCoord) << 1);
-	}
-};
-
 
 // Vulkan App methods =============================================================================
 
@@ -767,9 +717,6 @@ void VulkanApp::createGraphicsPipeline() {
 	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
 	multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
-	// // for depth or stencil buffers
-	// VkPipelineDepthStencilStateCreateInfo
-
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	colorBlendAttachment.colorWriteMask =
 		VK_COLOR_COMPONENT_R_BIT |
@@ -1201,42 +1148,44 @@ void VulkanApp::createTextureSampler() {
 }
 
 void VulkanApp::loadModel() {
-	tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
+	// tinyobj::attrib_t attrib;
+    // std::vector<tinyobj::shape_t> shapes;
+    // std::vector<tinyobj::material_t> materials;
+    // std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
-        throw std::runtime_error(warn + err);
-    }
+    // if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+    //     throw std::runtime_error(warn + err);
+    // }
 
-	std::unordered_map<Vertex, uint32_t> uniqueVertices;
+	// std::unordered_map<Vertex, uint32_t> uniqueVertices;
 
-	for (const auto& shape : shapes) {
-		for (const auto& index : shape.mesh.indices) {
-			Vertex vertex{};
+	// for (const auto& shape : shapes) {
+	// 	for (const auto& index : shape.mesh.indices) {
+	// 		Vertex vertex{};
 
-			vertex.pos = {
-				attrib.vertices[3 * index.vertex_index + 0],
-				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
-			};
+	// 		vertex.pos = {
+	// 			attrib.vertices[3 * index.vertex_index + 0],
+	// 			attrib.vertices[3 * index.vertex_index + 1],
+	// 			attrib.vertices[3 * index.vertex_index + 2]
+	// 		};
 
-			vertex.texCoord = {
-				attrib.texcoords[2 * index.texcoord_index + 0],
-				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-			};
+	// 		vertex.texCoord = {
+	// 			attrib.texcoords[2 * index.texcoord_index + 0],
+	// 			1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+	// 		};
 
-			vertex.color = {1.0f, 1.0f, 1.0f};
+	// 		vertex.normal = {1.0f, 1.0f, 1.0f};
 
-			if (uniqueVertices.count(vertex) == 0) {
-				uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-				vertices.push_back(vertex);
-			}
+	// 		if (uniqueVertices.count(vertex) == 0) {
+	// 			uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+	// 			vertices.push_back(vertex);
+	// 		}
 
-			indices.push_back(uniqueVertices[vertex]);
-		}
-	}
+	// 		indices.push_back(uniqueVertices[vertex]);
+	// 	}
+	// }
+
+	world.get_geometry(&vertices, &indices);
 }
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -1506,7 +1455,8 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	);
 
 	// vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	// vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	world.cmd_draw_indexed(commandBuffer);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -1524,7 +1474,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(0.0f, 6.0f, 4.2f), glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;

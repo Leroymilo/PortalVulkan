@@ -9,6 +9,9 @@
 #include <vector>
 #include <cstring>
 
+#include "world.hpp"
+#include "vertex.hpp"
+
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const uint32_t WIDTH = 800;
@@ -52,16 +55,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 static std::vector<char> readFile(const std::string& filename);
 
-struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 color;
-	glm::vec2 texCoord;
-
-	static VkVertexInputBindingDescription getBindingDescription();
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
-	bool operator==(const Vertex& other) const;
-};
-
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
@@ -71,6 +64,8 @@ struct UniformBufferObject {
 class VulkanApp {
 	private:
 		GLFWwindow* window;
+
+		World world;
 
 		VkInstance instance;
 		VkDebugUtilsMessengerEXT debugMessenger;
