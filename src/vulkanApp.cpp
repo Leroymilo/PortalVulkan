@@ -1576,6 +1576,7 @@ void VulkanApp::mainLoop() {
 	// Set the mouse at the center of the screen
 	glfwPollEvents();
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	while (!glfwWindowShouldClose(window)) {
 
