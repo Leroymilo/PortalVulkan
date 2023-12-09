@@ -4,9 +4,6 @@
 
 #include "../include/brushes.hpp"
 
-const float t = 1.f/3.f;
-const float t2 = 2.f/3.f;
-
 SimpleBrush::SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string tex_name):
 	min_point(min_point), max_point(max_point), tex_name(tex_name) {}
 
@@ -26,19 +23,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(0, t),
+			glm::vec2(1, 1),git 
 			glm::vec3(0, 1, 0)
 		}, {
 			glm::vec3(max_x, max_y, max_z),
-			glm::vec2(t, t),
+			glm::vec2(1, 0),
 			glm::vec3(0, 1, 0)
 		}, {
 			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(t, 0),
+			glm::vec2(0, 0),
 			glm::vec3(0, 1, 0)
 		}, {
 			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(0, 0),
+			glm::vec2(0, 1),
 			glm::vec3(0, 1, 0)
 		}
 	});
@@ -47,19 +44,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(t, t),
+			glm::vec2(1, 1),
 			glm::vec3(-1, 0, 0)
 		}, {
 			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(t2, t),
+			glm::vec2(1, 0),
 			glm::vec3(-1, 0, 0)
 		}, {
 			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(t2, 0),
+			glm::vec2(0, 0),
 			glm::vec3(-1, 0, 0)
 		}, {
 			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(t, 0),
+			glm::vec2(0, 1),
 			glm::vec3(-1, 0, 0)
 		}
 	});
@@ -68,19 +65,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(t2, t),
+			glm::vec2(1, 1),
 			glm::vec3(0, 0, 1)
 		}, {
 			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(1, t),
-			glm::vec3(0, 0, 1)
-		}, {
-			glm::vec3(max_x, max_y, max_z),
 			glm::vec2(1, 0),
 			glm::vec3(0, 0, 1)
 		}, {
+			glm::vec3(max_x, max_y, max_z),
+			glm::vec2(0, 0),
+			glm::vec3(0, 0, 1)
+		}, {
 			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(t2, 0),
+			glm::vec2(0, 1),
 			glm::vec3(0, 0, 1)
 		}
 	});
@@ -89,19 +86,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(0, t2),
+			glm::vec2(1, 1),
 			glm::vec3(0, 0, -1)
 		}, {
 			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(t, t2),
+			glm::vec2(1, 0),
 			glm::vec3(0, 0, -1)
 		}, {
 			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(t, t),
+			glm::vec2(0, 0),
 			glm::vec3(0, 0, -1)
 		}, {
 			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(0, t),
+			glm::vec2(0, 1),
 			glm::vec3(0, 0, -1)
 		}
 	});
@@ -110,19 +107,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(t, t2),
+			glm::vec2(1, 1),
 			glm::vec3(1, 0, 0)
 		}, {
 			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(t2, t2),
+			glm::vec2(1, 0),
 			glm::vec3(1, 0, 0)
 		}, {
 			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(t2, t),
+			glm::vec2(0, 0),
 			glm::vec3(1, 0, 0)
 		}, {
 			glm::vec3(max_x, max_y, max_z),
-			glm::vec2(t, t),
+			glm::vec2(0, 1),
 			glm::vec3(1, 0, 0)
 		}
 	});
@@ -131,19 +128,19 @@ bool SimpleBrush::generate_buffers(
 	vertices->insert(vertices->end(), {
 		{
 			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(t2, t2),
+			glm::vec2(1, 1),
 			glm::vec3(0, -1, 0)
 		}, {
 			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(1, t2),
+			glm::vec2(1, 0),
 			glm::vec3(0, -1, 0)
 		}, {
 			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(1, t),
+			glm::vec2(0, 0),
 			glm::vec3(0, -1, 0)
 		}, {
 			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(t2, t),
+			glm::vec2(0, 1),
 			glm::vec3(0,- 1, 0)
 		}
 	});
@@ -163,9 +160,12 @@ void SimpleBrush::set_descriptor_sets(std::vector<int> &set_indices) {
 }
 
 void SimpleBrush::cmd_draw_indexed(RenderInfo &render_info) {
+	int set_index = descriptor_set_indices[render_info.current_frame];
+	VkDescriptorSet descriptor_set = render_info.descriptor_sets[set_index];
+
 	vkCmdBindDescriptorSets(
 		render_info.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		render_info.pipeline_layout, 0, 1, &(render_info.descriptor_sets[render_info.current_frame]),
+		render_info.pipeline_layout, 0, 1, &descriptor_set,
 		0, nullptr
 	);
 
