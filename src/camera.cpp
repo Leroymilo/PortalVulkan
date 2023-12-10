@@ -64,7 +64,7 @@ void Camera::get_matrices(GLFWwindow *window, glm::mat4 *proj, glm::mat4 *view) 
 	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
 	// Projection matrix : 45� Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	*proj = glm::perspective(glm::radians(FoV), width / float(height), 0.1f, 100.0f);
+	*proj = glm::perspective(glm::radians(FoV), width / float(height), 0.01f, 100.0f);
 	// Camera matrix
 	*view = glm::lookAt(
 		position,           // Camera is here

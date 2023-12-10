@@ -16,19 +16,23 @@
 
 struct Vertex {
     glm::vec3 pos;
+	glm::vec3 tangent 	/*= glm::vec3(1, 0, 0)*/;
+	glm::vec3 bitangent /*= glm::vec3(0, 1, 0)*/;
+    glm::vec3 normal 	/*= glm::vec3(0, 0, 1)*/;
 	glm::vec2 texCoord;
-    glm::vec3 normal;
 
 	static VkVertexInputBindingDescription getBindingDescription();
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+	static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions();
 	bool operator==(const Vertex& other) const;
 };
 
 template<> struct std::hash<Vertex> {
 	std::size_t operator()(Vertex const& vertex) const {
 		std::size_t result = std::hash<glm::vec3>()(vertex.pos);
-		result = (result ^ (std::hash<glm::vec2>()(vertex.texCoord) << 1)) >> 1;
-		result = result ^ (std::hash<glm::vec3>()(vertex.normal) << 1);
+		result = (result ^ (std::hash<glm::vec3>()(vertex.tangent) << 1)) >> 1;
+		result = (result ^ (std::hash<glm::vec3>()(vertex.bitangent) << 1)) >> 1;
+		result = (result ^ (std::hash<glm::vec3>()(vertex.normal) << 1)) >> 1;
+		result = result ^ (std::hash<glm::vec2>()(vertex.texCoord) << 1);
 		return result;
 	}
 };

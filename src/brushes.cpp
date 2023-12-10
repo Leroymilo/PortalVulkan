@@ -13,6 +13,8 @@ bool SimpleBrush::generate_buffers(
 ) {
 	float min_x = min_point.x, min_y = min_point.y, min_z = min_point.z;
 	float max_x = max_point.x, max_y = max_point.y, max_z = max_point.z;
+	float dx = max_x - min_x, dy = max_y - min_y, dz = max_z - min_z;
+	dx /= 2, dy /= 2, dz /= 2;	// each texture is 2m x 2m
 
 	// the vertex index in indices where this brush starts
 	vertex_offset = vertices->size();
@@ -22,126 +24,174 @@ bool SimpleBrush::generate_buffers(
 	// face 1
 	vertices->insert(vertices->end(), {
 		{
-			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(1, 1),
-			glm::vec3(0, 1, 0)
+			glm::vec3(min_x, min_y, max_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec2(0, dy)
+		}, {
+			glm::vec3(max_x, min_y, max_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec2(dx, dy)
 		}, {
 			glm::vec3(max_x, max_y, max_z),
-			glm::vec2(1, 0),
-			glm::vec3(0, 1, 0)
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec2(dx, 0)
 		}, {
-			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(0, 0),
-			glm::vec3(0, 1, 0)
-		}, {
-			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(0, 1),
-			glm::vec3(0, 1, 0)
+			glm::vec3(min_x, max_y, max_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec2(0, 0)
 		}
 	});
 
 	// face 2
 	vertices->insert(vertices->end(), {
 		{
+			glm::vec3(min_x, max_y, min_z),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(-1, 0, 0),
+			glm::vec2(0, dz)
+		}, {
 			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(1, 1),
-			glm::vec3(-1, 0, 0)
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(-1, 0, 0),
+			glm::vec2(dy, dz)
 		}, {
 			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(1, 0),
-			glm::vec3(-1, 0, 0)
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(-1, 0, 0),
+			glm::vec2(dy, 0)
 		}, {
 			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(0, 0),
-			glm::vec3(-1, 0, 0)
-		}, {
-			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(0, 1),
-			glm::vec3(-1, 0, 0)
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(-1, 0, 0),
+			glm::vec2(0, 0)
 		}
 	});
 
 	// face 3
 	vertices->insert(vertices->end(), {
 		{
-			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(1, 1),
-			glm::vec3(0, 0, 1)
+			glm::vec3(min_x, min_y, min_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, -1, 0),
+			glm::vec2(0, dz)
+		}, {
+			glm::vec3(max_x, min_y, min_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, -1, 0),
+			glm::vec2(dx, dz)
 		}, {
 			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(1, 0),
-			glm::vec3(0, 0, 1)
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, -1, 0),
+			glm::vec2(dx, 0)
 		}, {
-			glm::vec3(max_x, max_y, max_z),
-			glm::vec2(0, 0),
-			glm::vec3(0, 0, 1)
-		}, {
-			glm::vec3(min_x, max_y, max_z),
-			glm::vec2(0, 1),
-			glm::vec3(0, 0, 1)
+			glm::vec3(min_x, min_y, max_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, -1, 0),
+			glm::vec2(0, 0)
 		}
 	});
 
 	// face 4
 	vertices->insert(vertices->end(), {
 		{
-			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(1, 1),
-			glm::vec3(0, 0, -1)
-		}, {
-			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(1, 0),
-			glm::vec3(0, 0, -1)
+			glm::vec3(max_x, max_y, min_z),
+			glm::vec3(-1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 1, 0),
+			glm::vec2(0, dz)
 		}, {
 			glm::vec3(min_x, max_y, min_z),
-			glm::vec2(0, 0),
-			glm::vec3(0, 0, -1)
+			glm::vec3(-1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 1, 0),
+			glm::vec2(dx, dz)
 		}, {
-			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(0, 1),
-			glm::vec3(0, 0, -1)
+			glm::vec3(min_x, max_y, max_z),
+			glm::vec3(-1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 1, 0),
+			glm::vec2(dx, 0)
+		}, {
+			glm::vec3(max_x, max_y, max_z),
+			glm::vec3(-1, 0, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 1, 0),
+			glm::vec2(0, 0)
 		}
 	});
 
 	// face 5
 	vertices->insert(vertices->end(), {
 		{
-			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(1, 1),
-			glm::vec3(1, 0, 0)
-		}, {
 			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(1, 0),
-			glm::vec3(1, 0, 0)
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(1, 0, 0),
+			glm::vec2(0, dz)
 		}, {
 			glm::vec3(max_x, max_y, min_z),
-			glm::vec2(0, 0),
-			glm::vec3(1, 0, 0)
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(1, 0, 0),
+			glm::vec2(dy, dz)
 		}, {
 			glm::vec3(max_x, max_y, max_z),
-			glm::vec2(0, 1),
-			glm::vec3(1, 0, 0)
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(1, 0, 0),
+			glm::vec2(dy, 0)
+		}, {
+			glm::vec3(max_x, min_y, max_z),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(1, 0, 0),
+			glm::vec2(0, 0)
 		}
 	});
 
 	// face 6
 	vertices->insert(vertices->end(), {
 		{
-			glm::vec3(min_x, min_y, min_z),
-			glm::vec2(1, 1),
-			glm::vec3(0, -1, 0)
+			glm::vec3(min_x, max_y, min_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, -1),
+			glm::vec2(0, dy)
+		}, {
+			glm::vec3(max_x, max_y, min_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, -1),
+			glm::vec2(dx, dy)
 		}, {
 			glm::vec3(max_x, min_y, min_z),
-			glm::vec2(1, 0),
-			glm::vec3(0, -1, 0)
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, -1),
+			glm::vec2(dx, 0)
 		}, {
-			glm::vec3(max_x, min_y, max_z),
-			glm::vec2(0, 0),
-			glm::vec3(0, -1, 0)
-		}, {
-			glm::vec3(min_x, min_y, max_z),
-			glm::vec2(0, 1),
-			glm::vec3(0,- 1, 0)
+			glm::vec3(min_x, min_y, min_z),
+			glm::vec3(1, 0, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, -1),
+			glm::vec2(0, 0)
 		}
 	});
 
