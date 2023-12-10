@@ -14,19 +14,22 @@ layout(location = 4) in vec2 inTexCoord;
 
 layout(location = 0) out vec2 UV;
 layout(location = 1) out vec3 fragPos;
-layout(location = 2) out vec3 camPos;
-layout(location = 3) out mat3 TBN;
+layout(location = 2) out vec3 fragNorm;
+layout(location = 3) out vec3 camPos;
+layout(location = 4) out mat3 TBN;
 
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
 
     UV = inTexCoord;
 	
-	fragPos = vec3(ubo.model * vec4(inPosition, 1));
-	
-	camPos = vec3(inverse(ubo.view) * vec4(0, 0, 0, 1));
+	fragPos = (ubo.model * vec4(inPosition, 1)).xyz;
 
-	TBN = mat3(
+	fragNorm = inNormal.xyz;
+	
+	camPos = (inverse(ubo.view) * vec4(0, 0, 0, 1)).xyz;
+
+	TBN = mat3(ubo.model) * mat3(
 		inTangent,
 		inBitangent,
 		inNormal

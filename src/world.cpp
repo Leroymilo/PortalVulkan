@@ -16,6 +16,11 @@ World::World() {
 			glm::vec3(2.0f, -2.0f, 0.0f),
 			glm::vec3(2.5f, 2.0f, 4.0f),
 			"concrete"
+		),
+		SimpleBrush(
+			glm::vec3(0.9, 1.4, 1.9),
+			glm::vec3(1.1, 1.6, 2.1),
+			"concrete_small"
 		)
 	};
 }
