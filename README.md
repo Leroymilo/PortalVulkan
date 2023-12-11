@@ -21,5 +21,3 @@ To run this project, you need :
 	- `libXxf86vm-devel`
 
 Once everything is installed, you should be able to just `make test` to run it if your GPU is supported (very low requirements from what I now).
-
-Please ignore the Moire effect, I have not implemented mipmaps yet.

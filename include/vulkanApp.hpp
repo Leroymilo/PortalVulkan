@@ -164,7 +164,11 @@ class VulkanApp {
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void createSwapChain();
 
-		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView createImageView(
+			VkImage image, VkFormat format,
+			VkImageAspectFlags aspectFlags,
+			uint32_t nb_mip_levels
+		);
 
 		void createImageViews();
 
@@ -194,15 +198,20 @@ class VulkanApp {
 		);
 
 		void createImage(
-			uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+			uint32_t width, uint32_t height, uint32_t nb_mip_levels,
+			VkFormat format, VkImageTiling tiling,
 			VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
 			VkImage& image, VkDeviceMemory& imageMemory
 		);
 		void transitionImageLayout(
-			VkImage image, VkFormat format,
+			VkImage image, VkFormat format, uint32_t nb_mip_levels,
 			VkImageLayout oldLayout, VkImageLayout newLayout
 		);
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void generateMipmaps(
+			VkImage image, VkFormat imageFormat,
+			int32_t texWidth, int32_t texHeight, uint32_t nb_mip_levels
+		);
 		Texture createTexture(std::string tex_name);
 		void createTextures();
 
