@@ -7,21 +7,36 @@
 
 World::World() {
 	simple_brushes = {
+		// floor 
 		SimpleBrush(
-			glm::vec3(-2.0f, -2.0f, -0.5f),
-			glm::vec3(2.0f, 2.0f, 0.0f),
+			glm::vec3(-4.0f, -4.0f, -0.5f),
+			glm::vec3(4.0f, 4.0f, 0.0f),
 			"concrete_very_small_alt"
 		),
+		// wall x pos
 		SimpleBrush(
-			glm::vec3(2.0f, -2.0f, 0.0f),
-			glm::vec3(2.5f, 2.0f, 4.0f),
+			glm::vec3(4.0f, -4.0f, 0.0f),
+			glm::vec3(4.5f, 4.0f, 4.0f),
 			"concrete"
 		),
+		// wall x neg
 		SimpleBrush(
-			glm::vec3(0.9, 1.4, 1.9),
-			glm::vec3(1.1, 1.6, 2.1),
-			"concrete_small"
-		)
+			glm::vec3(-4.5f, -4.0f, 0.0f),
+			glm::vec3(-4.0f, 4.0f, 4.0f),
+			"concrete"
+		),
+		// wall y pos
+		SimpleBrush(
+			glm::vec3(-4.0f, 4.0f, 0.0f),
+			glm::vec3(4.0f, 4.5f, 4.0f),
+			"concrete"
+		),
+		// wall y pos
+		SimpleBrush(
+			glm::vec3(-4.0f, -4.5f, 0.0f),
+			glm::vec3(4.0f, -4.0f, 4.0f),
+			"concrete"
+		),
 	};
 }
 
