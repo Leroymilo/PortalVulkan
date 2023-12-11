@@ -19,8 +19,35 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MODEL_PATH = "models/viking_room.obj";
-const std::string TEXTURE_PATH = "textures/viking_room.png";
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	bool isComplete();
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
+static std::vector<char> readFile(const std::string& filename);
+
+static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void* pUserData
+);
 
 VkResult CreateDebugUtilsMessengerEXT(
 	VkInstance instance,
@@ -35,34 +62,6 @@ void DestroyDebugUtilsMessengerEXT(
 	const VkAllocationCallbacks* pAllocator
 );
 
-struct QueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete();
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData
-);
-
-static std::vector<char> readFile(const std::string& filename);
-
-struct UniformBufferObject {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-};
-
 class VulkanApp {
 	private:
 		GLFWwindow* window;
@@ -76,6 +75,8 @@ class VulkanApp {
 		VkDevice device;	// logical device
 		VkQueue graphicsQueue;
 		VkQueue presentQueue;
+
+		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 		
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;
@@ -95,6 +96,10 @@ class VulkanApp {
 		
 		std::unordered_map<std::string, Texture> textures;
 		std::unordered_map<std::string, Texture> norm_maps;
+
+		VkImage colorImage;
+		VkDeviceMemory colorImageMemory;
+		VkImageView colorImageView;
 
 		VkImage depthImage;
 		VkDeviceMemory depthImageMemory;
@@ -151,10 +156,11 @@ class VulkanApp {
 
 		void createSurface();
 
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-		bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-		int isDeviceSuitable(VkPhysicalDevice device);	// 0 means unsuitable, any number > 0 is a score
+		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice &ph_device);
+		bool checkDeviceExtensionSupport(VkPhysicalDevice &ph_device);
+		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice &ph_device);
+		VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice &physical_device);
+		int isDeviceSuitable(VkPhysicalDevice ph_device);	// 0 means unsuitable, any number > 0 is a score
 		void pickPhysicalDevice();
 
 		void createLogicalDevice();
@@ -183,6 +189,8 @@ class VulkanApp {
 
 		void createCommandPool();
 
+		void createColorResources();
+
 		VkFormat findSupportedFormat(
 			const std::vector<VkFormat>& candidates,
 			VkImageTiling tiling, VkFormatFeatureFlags features
@@ -199,6 +207,7 @@ class VulkanApp {
 
 		void createImage(
 			uint32_t width, uint32_t height, uint32_t nb_mip_levels,
+			VkSampleCountFlagBits numSamples,
 			VkFormat format, VkImageTiling tiling,
 			VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
 			VkImage& image, VkDeviceMemory& imageMemory
@@ -214,8 +223,6 @@ class VulkanApp {
 		);
 		Texture createTexture(std::string tex_name);
 		void createTextures();
-
-		void loadModel();
 
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);

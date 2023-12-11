@@ -24,50 +24,8 @@
 
 #include "../include/vulkanApp.hpp"
 
-// const std::vector<Vertex> vertices = {
-//     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-//     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-//     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-//     {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-//     {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-//     {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-//     {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-//     {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-// };
-
-// const std::vector<uint16_t> indices = {
-//     0, 1, 2, 2, 3, 0,
-// 	4, 5, 6, 6, 7, 4
-// };
 
 // Helper functions ===============================================================================
-
-static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-	auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-    app->framebufferResized = true;
-}
-
-VkResult CreateDebugUtilsMessengerEXT(
-	VkInstance instance,
-	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-	const VkAllocationCallbacks* pAllocator,
-	VkDebugUtilsMessengerEXT* pDebugMessenger
-) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
 
 bool QueueFamilyIndices::isComplete() {
 	return graphicsFamily.has_value() && presentFamily.has_value();
@@ -91,6 +49,11 @@ static std::vector<char> readFile(const std::string& filename) {
 	return buffer;
 }
 
+static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+	auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+    app->framebufferResized = true;
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -101,6 +64,29 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 	return VK_FALSE;
 }
+
+
+VkResult CreateDebugUtilsMessengerEXT(
+	VkInstance instance,
+	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+	const VkAllocationCallbacks* pAllocator,
+	VkDebugUtilsMessengerEXT* pDebugMessenger
+) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
 
 // Vulkan App methods =============================================================================
 
@@ -224,14 +210,14 @@ void VulkanApp::createSurface() {
 	}
 }
 
-QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice &ph_device) {
 	QueueFamilyIndices indices;
 	
 	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+	vkGetPhysicalDeviceQueueFamilyProperties(ph_device, &queueFamilyCount, nullptr);
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+	vkGetPhysicalDeviceQueueFamilyProperties(ph_device, &queueFamilyCount, queueFamilies.data());
 
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
@@ -240,7 +226,7 @@ QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device) {
 		}
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(ph_device, i, surface, &presentSupport);
 		if (presentSupport) {
 			indices.presentFamily = i;
 		}
@@ -255,12 +241,12 @@ QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device) {
 	return indices;
 }
 
-bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice &ph_device) {
 	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+	vkEnumerateDeviceExtensionProperties(ph_device, nullptr, &extensionCount, nullptr);
 
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+	vkEnumerateDeviceExtensionProperties(ph_device, nullptr, &extensionCount, availableExtensions.data());
 
 	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -271,61 +257,78 @@ bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice device) {
+SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice &ph_device) {
 	SwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(ph_device, surface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(ph_device, surface, &formatCount, nullptr);
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(ph_device, surface, &formatCount, details.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(ph_device, surface, &presentModeCount, nullptr);
 
 	if (presentModeCount != 0) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(ph_device, surface, &presentModeCount, details.presentModes.data());
 	}
 
 	return details;
 }
 
-int VulkanApp::isDeviceSuitable(VkPhysicalDevice device) {
-	// 0 means unsuitable, any number > 0 is a score
+VkSampleCountFlagBits VulkanApp::getMaxUsableSampleCount(VkPhysicalDevice &physical_device) {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physical_device, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts =
+		physicalDeviceProperties.limits.framebufferColorSampleCounts &
+		physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+int VulkanApp::isDeviceSuitable(VkPhysicalDevice ph_device) {
+	// -1 means unsuitable, any number >= 0 is a score
 
 	VkPhysicalDeviceProperties deviceProperties;
-	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	vkGetPhysicalDeviceProperties(ph_device, &deviceProperties);
 
 	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	vkGetPhysicalDeviceFeatures(ph_device, &deviceFeatures);
 
-	int score = 1;
+	int score = 0;
 
 	// required features
 
-	QueueFamilyIndices indices = findQueueFamilies(device);
+	QueueFamilyIndices indices = findQueueFamilies(ph_device);
 
-	bool extensionsSupported = checkDeviceExtensionSupport(device);
+	bool extensionsSupported = checkDeviceExtensionSupport(ph_device);
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(ph_device);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
 	VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+    vkGetPhysicalDeviceFeatures(ph_device, &supportedFeatures);
 
 	if (
 		!indices.isComplete() | !extensionsSupported | !swapChainAdequate |
 		!supportedFeatures.samplerAnisotropy
 	) {
-		return 0;
+		return -1;
 	}
 
 	// wanted features
@@ -334,9 +337,11 @@ int VulkanApp::isDeviceSuitable(VkPhysicalDevice device) {
 		score += 1000;
 	}
 
+	score += std::log2((float)getMaxUsableSampleCount(ph_device));
+
 	// maybe prefer devices with fewer distinct queue families for increased performance
 
-	// printf("%s : %i\n", deviceProperties.deviceName, score);
+	printf("%s : %i\n", deviceProperties.deviceName, score);
 
 	return score;
 }	
@@ -349,19 +354,19 @@ void VulkanApp::pickPhysicalDevice() {
 		throw std::runtime_error("failed to find GPUs with Vulkan support!");
 	}
 
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	std::vector<VkPhysicalDevice> ph_devices(deviceCount);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, ph_devices.data());
 
-	int best_score = 0;
+	int best_score = -1;
 
-	for (const auto& device : devices) {
-		int score = isDeviceSuitable(device);
+	for (const auto &ph_device : ph_devices) {
+		int score = isDeviceSuitable(ph_device);
 
-		// 0 means unsuitable
-		if (score == 0) {continue;}
+		// -1 means unsuitable
+		if (score == -1) {continue;}
 
 		if (score > best_score) {
-			physicalDevice = device;
+			physicalDevice = ph_device;
 			best_score = score;
 		}
 	}
@@ -369,6 +374,8 @@ void VulkanApp::pickPhysicalDevice() {
 	if (physicalDevice == VK_NULL_HANDLE) {
 		throw std::runtime_error("failed to find a suitable GPU!");
 	}
+
+	msaaSamples = getMaxUsableSampleCount(physicalDevice);
 }
 
 void VulkanApp::createLogicalDevice() {
@@ -551,13 +558,13 @@ void VulkanApp::createImageViews() {
 void VulkanApp::createRenderPass() {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapChainImageFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.samples = msaaSamples;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
@@ -565,7 +572,7 @@ void VulkanApp::createRenderPass() {
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format = findDepthFormat();
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.samples = msaaSamples;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -577,11 +584,26 @@ void VulkanApp::createRenderPass() {
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentDescription colorAttachmentResolve{};
+    colorAttachmentResolve.format = swapChainImageFormat;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference colorAttachmentResolveRef{};
+    colorAttachmentResolveRef.attachment = 2;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pResolveAttachments = &colorAttachmentResolveRef;
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -591,7 +613,7 @@ void VulkanApp::createRenderPass() {
 	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-	std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+	std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -725,7 +747,7 @@ void VulkanApp::createGraphicsPipeline() {
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.rasterizationSamples = msaaSamples;
 	multisampling.minSampleShading = 1.0f; // Optional
 	multisampling.pSampleMask = nullptr; // Optional
 	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
@@ -810,9 +832,10 @@ void VulkanApp::createFramebuffers() {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
 	for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
-		std::array<VkImageView, 2> attachments = {
-			swapChainImageViews[i],
-    		depthImageView
+		std::array<VkImageView, 3> attachments = {
+			colorImageView,
+    		depthImageView,
+			swapChainImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -841,6 +864,18 @@ void VulkanApp::createCommandPool() {
 	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create command pool!");
 	}
+}
+
+void VulkanApp::createColorResources() {
+    VkFormat colorFormat = swapChainImageFormat;
+
+    createImage(
+		swapChainExtent.width, swapChainExtent.height, 1, msaaSamples,
+		colorFormat, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory
+	);
+    colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
 VkFormat VulkanApp::findSupportedFormat(
@@ -875,7 +910,7 @@ void VulkanApp::createDepthResources() {
 	VkFormat depthFormat = findDepthFormat();
 
 	createImage(
-		swapChainExtent.width, swapChainExtent.height, 1,
+		swapChainExtent.width, swapChainExtent.height, 1, msaaSamples,
 		depthFormat, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -961,6 +996,7 @@ uint32_t VulkanApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 
 void VulkanApp::createImage(
 	uint32_t width, uint32_t height, uint32_t nb_mip_levels,
+	VkSampleCountFlagBits numSamples,
 	VkFormat format, VkImageTiling tiling,
 	VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
 	VkImage& image, VkDeviceMemory& imageMemory
@@ -977,7 +1013,7 @@ void VulkanApp::createImage(
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = numSamples;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -1217,7 +1253,7 @@ Texture VulkanApp::createTexture(std::string tex_name) {
 	stbi_image_free(pixels);
 
 	createImage(
-		texWidth, texHeight, nb_mip_levels,
+		texWidth, texHeight, nb_mip_levels, VK_SAMPLE_COUNT_1_BIT,
 		VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1288,10 +1324,6 @@ void VulkanApp::createTextures() {
 		textures[tex_name] = createTexture(tex_name);
 		norm_maps[tex_name] = createTexture(tex_name + "_normal");
 	}
-}
-
-void VulkanApp::loadModel() {
-	world.get_geometry(&vertices, &indices);
 }
 
 void VulkanApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -1531,10 +1563,11 @@ void VulkanApp::initVulkan() {
     createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createCommandPool();
+	createColorResources();
 	createDepthResources();
 	createFramebuffers();
 	createTextures();
-	loadModel();
+	world.get_geometry(&vertices, &indices);
 	createVertexBuffer();
 	createIndexBuffer();
     createUniformBuffers();
@@ -1709,6 +1742,7 @@ void VulkanApp::recreateSwapChain() {
 
     createSwapChain();
     createImageViews();
+	createColorResources();
     createDepthResources();
     createFramebuffers();
 }
@@ -1729,7 +1763,7 @@ void VulkanApp::mainLoop() {
 		nbFrames++;
 		if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
 			// printf and reset timer
-			// printf("%f ms/frame\n", 1000.0/double(nbFrames));
+			printf("%f ms/frame\n", 1000.0/double(nbFrames));
 			nbFrames = 0;
 			lastTime += 1.0;
 		}
@@ -1737,7 +1771,6 @@ void VulkanApp::mainLoop() {
 		glfwPollEvents();
 		drawFrame();
 	}
-
 	vkDeviceWaitIdle(device);
 }
 
@@ -1749,6 +1782,10 @@ void VulkanApp::cleanupSwapChain() {
 	for (auto imageView : swapChainImageViews) {
 		vkDestroyImageView(device, imageView, nullptr);
 	}
+
+    vkDestroyImageView(device, colorImageView, nullptr);
+    vkDestroyImage(device, colorImage, nullptr);
+    vkFreeMemory(device, colorImageMemory, nullptr);
 
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
