@@ -1475,13 +1475,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	scissor.offset = {0, 0};
 	scissor.extent = swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-	// vkCmdBindDescriptorSets(
-	// 	commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	// 	pipelineLayout, 0, 1, &descriptorSets[currentFrame],
-	// 	0, nullptr
-	// );
-
+	
 	RenderInfo render_info = {
 		commandBuffer,
 		pipelineLayout,

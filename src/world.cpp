@@ -58,6 +58,7 @@ std::vector<std::string> World::get_tex_names() {
 	for (SimpleBrush &brush : simple_brushes) {
 		if (tex_names_set.count(brush.tex_name) == 0) {
 			tex_names.push_back(brush.tex_name);
+			tex_names_set.insert(brush.tex_name);
 		}
 	}
 
