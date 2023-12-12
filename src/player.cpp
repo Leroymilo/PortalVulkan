@@ -75,12 +75,6 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 
 	// collides
 
-	glm::mat4 h_rot = glm::rotate(
-		glm::mat4(1),
-		theta,
-		glm::vec3(0, 0, 1)
-	);
-
 	model = glm::translate(glm::mat4(1), position);
 	collider.ColShape::set_transform(model);
 

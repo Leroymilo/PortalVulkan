@@ -6,7 +6,7 @@
 
 class Player {
 	private:
-		CollisionSphere collider = CollisionSphere(0.5);
+		CollisionSphere collider = CollisionSphere(0.1);
 		bool noclip = true;
 
 		glm::vec3 position = glm::vec3(0, 0, 1.8);

@@ -1,7 +1,9 @@
 #include <string>
 #include <unordered_map>
-
 #include <stdio.h>
+#include <iostream>
+
+#include <glm/gtx/string_cast.hpp>
 
 #include "../include/world.hpp"
 
@@ -81,8 +83,17 @@ void World::process_physics(GLFWwindow *window) {
 
 	player.process_physics(window, deltaTime);
 
-	for (SimpleBrush &brush : simple_brushes) {
-		player.collides(brush.get_collider_p());
+	// for (SimpleBrush &brush : simple_brushes) {
+	// 	if (player.collides(brush.get_collider_p())) {
+	// 		printf("collision !\n");
+	// 	}
+	// }
+
+	glm::mat4 model = player.get_model_matrix();
+	std::cout << "player model matrix : " << glm::to_string(model) << std::endl;
+
+	if (player.collides(simple_brushes[0].get_collider_p())) {
+		printf("collision!\n");
 	}
 
 	lastTime = currentTime;

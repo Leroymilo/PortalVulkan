@@ -8,11 +8,12 @@
 
 class ColShape {
 	protected:
-		glm::mat4 matrix = glm::mat4(1.0f);
 	
 	public:
+		glm::mat4 matrix = glm::mat4(1.0f);
+		
 		void set_transform(glm::mat4 new_matrix);
-		virtual glm::vec4 support_function(glm::vec4 dir) = 0;
+		virtual glm::vec3 support_function(glm::vec3 dir) = 0;
 		bool collides(ColShape *other);
 };
 
@@ -22,17 +23,17 @@ class CollisionSphere: public ColShape {
 
 	public:
 		CollisionSphere(float radius);
-		glm::vec4 support_function(glm::vec4 dir);
+		glm::vec3 support_function(glm::vec3 dir);
 };
 
 class CollisionAAB: public ColShape {
 	private:
-		glm::vec4 min_point;
-		glm::vec4 max_point;
+		glm::vec3 min_point;
+		glm::vec3 max_point;
 	
 	public :
-		CollisionAAB(glm::vec4 min_point, glm::vec4 max_point);
-		glm::vec4 support_function(glm::vec4 dir);
+		CollisionAAB(glm::vec3 min_point, glm::vec3 max_point);
+		glm::vec3 support_function(glm::vec3 dir);
 };
 
 #endif //COLLISION_SHAPES_HDD

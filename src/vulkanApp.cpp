@@ -1764,6 +1764,9 @@ void VulkanApp::mainLoop() {
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
+	bool paused = false;
+	bool prev_esc_press = glfwGetKey( window, GLFW_KEY_ESCAPE ) == GLFW_PRESS;
+
 	while (!glfwWindowShouldClose(window)) {
 
 		// Measure speed
@@ -1777,8 +1780,18 @@ void VulkanApp::mainLoop() {
 		}
 
 		glfwPollEvents();
-		world.process_physics(window);
-		drawFrame();
+
+		if (!paused) {
+			drawFrame();
+			world.process_physics(window);
+		}
+		
+		bool esc_press = glfwGetKey( window, GLFW_KEY_ESCAPE ) == GLFW_PRESS;
+		if (esc_press && !prev_esc_press){
+			paused = !paused;
+			printf("toggle pause\n");
+		}
+		prev_esc_press = esc_press;
 	}
 	vkDeviceWaitIdle(device);
 }
