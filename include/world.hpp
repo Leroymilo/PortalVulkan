@@ -5,14 +5,14 @@
 #include <tuple>
 #include <vector>
 
-#include "camera.hpp"
+#include "player.hpp"
 #include "brushes.hpp"
 #include "vertex.hpp"
 
 class World {
 	private:
 		std::vector<SimpleBrush> simple_brushes;
-		Camera camera;
+		Player player;
 
 	public:
 		World();
@@ -25,7 +25,8 @@ class World {
 		std::vector<std::string> get_tex_names();
 		void set_descriptor_sets(std::unordered_map<std::string, std::vector<int>> &set_indices_map);
 
-		void get_matrices(GLFWwindow *window, glm::mat4 *proj, glm::mat4 *view);
+		void process_physics(GLFWwindow *window);
+		void get_matrices(glm::mat4 *view);
 		void cmd_draw_indexed(RenderInfo &render_info);
 };
 

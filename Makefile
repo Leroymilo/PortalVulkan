@@ -22,7 +22,7 @@ $(OBJ_DIR)/%_frag.spv: %.frag
 	@mkdir -p $(@D)
 	glslc $< -O -o $@
 
-$(OBJ_DIR)/%.o: %.cpp
+$(OBJ_DIR)/%.o: %.cpp 
 	@mkdir -p $(@D)
 	g++ -I$(INCLUDE) -c $< -o $@ -DSFML_STATIC -static
 

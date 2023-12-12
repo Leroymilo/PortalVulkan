@@ -5,7 +5,12 @@
 #include "../include/brushes.hpp"
 
 SimpleBrush::SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string tex_name):
-	min_point(min_point), max_point(max_point), tex_name(tex_name) {}
+	min_point(min_point), max_point(max_point), tex_name(tex_name),
+	collider(glm::vec4(min_point, 1), glm::vec4(max_point, 1)) {}
+
+CollisionAAB *SimpleBrush::get_collider_p() {
+	return &collider;
+}
 
 bool SimpleBrush::generate_buffers(
 			std::vector<Vertex> *vertices,

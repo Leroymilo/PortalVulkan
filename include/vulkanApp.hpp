@@ -3,21 +3,14 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
 #include <optional>
 #include <vector>
-#include <cstring>
 #include <unordered_map>
 
 #include "texture.hpp"
 #include "world.hpp"
 #include "vertex.hpp"
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;

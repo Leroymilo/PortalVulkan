@@ -25,6 +25,13 @@
 #include "../include/vulkanApp.hpp"
 
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
+const uint32_t WIDTH = 1600;
+const uint32_t HEIGHT = 900;
+const float FoV = 90.0f;
+
+
 // Helper functions ===============================================================================
 
 bool QueueFamilyIndices::isComplete() {
@@ -1652,8 +1659,9 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	// ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.model = glm::mat4(1.0f);
 
-	world.get_matrices(window, &ubo.proj, &ubo.view);
+	world.get_matrices(&ubo.view);
 
+	ubo.proj = glm::perspective(glm::radians(FoV), WIDTH / float(HEIGHT), 0.01f, 100.0f);
 	ubo.proj[1][1] *= -1;
 
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1769,6 +1777,7 @@ void VulkanApp::mainLoop() {
 		}
 
 		glfwPollEvents();
+		world.process_physics(window);
 		drawFrame();
 	}
 	vkDeviceWaitIdle(device);

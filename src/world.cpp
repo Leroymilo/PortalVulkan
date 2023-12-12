@@ -71,8 +71,25 @@ void World::set_descriptor_sets(std::unordered_map<std::string, std::vector<int>
 	}
 }
 
-void World::get_matrices(GLFWwindow *window, glm::mat4 *proj, glm::mat4 *view) {
-	camera.get_matrices(window, proj, view);
+void World::process_physics(GLFWwindow *window) {
+	// glfwGetTime is called only once, the first time this function is called
+	static double lastTime = glfwGetTime();
+
+	// Compute time difference between current and last frame
+	double currentTime = glfwGetTime();
+	float deltaTime = float(currentTime - lastTime);
+
+	player.process_physics(window, deltaTime);
+
+	for (SimpleBrush &brush : simple_brushes) {
+		player.collides(brush.get_collider_p());
+	}
+
+	lastTime = currentTime;
+}
+
+void World::get_matrices(glm::mat4 *view) {
+	*view = player.get_view_matrix();
 }
 
 void World::cmd_draw_indexed(RenderInfo &render_info) {
