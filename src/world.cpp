@@ -31,7 +31,7 @@ World::World() {
 		SimpleBrush(
 			glm::vec3(-4.0f, 4.0f, 0.0f),
 			glm::vec3(4.0f, 4.5f, 4.0f),
-			"concrete"
+			"concrete_small"
 		),
 		// wall y pos
 		SimpleBrush(
@@ -89,12 +89,18 @@ void World::process_physics(GLFWwindow *window) {
 	// 	}
 	// }
 
-	glm::mat4 model = player.get_model_matrix();
-	std::cout << "player model matrix : " << glm::to_string(model) << std::endl;
+	glm::mat4 player_mat = player.get_model_matrix();
+	printf("player position : %f, %f, %f\n", player_mat[3].x, player_mat[3].y, player_mat[3].z);
 
 	if (player.collides(simple_brushes[0].get_collider_p())) {
-		printf("collision!\n");
+		printf("floor collision!\n");
 	}
+	// if (player.collides(simple_brushes[1].get_collider_p())) {
+	// 	printf("right wall collision!\n");
+	// }
+	// if (player.collides(simple_brushes[2].get_collider_p())) {
+	// 	printf("left wall collision!\n");
+	// }
 
 	lastTime = currentTime;
 }

@@ -9,6 +9,10 @@ bool Player::collides(ColShape *other) {
 	return collider.ColShape::collides(other);
 }
 
+CollisionSphere *Player::get_collider() {
+	return &collider;
+}
+
 void Player::process_physics(GLFWwindow *window, float delta) {
 	// Get mouse position
 	double xpos, ypos;
@@ -52,20 +56,30 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	glm::vec3 up = glm::cross( right, direction );
 
 	// Move forward
-	if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
+	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
 		position += direction * delta * PLAYER_SPEED;
 	}
 	// Move backward
-	if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
+	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
 		position -= direction * delta * PLAYER_SPEED;
 	}
 	// Strafe right
-	if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS){
+	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
 		position += right * delta * PLAYER_SPEED;
 	}
 	// Strafe left
-	if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
+	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
 		position -= right * delta * PLAYER_SPEED;
+	}
+
+	// Flying
+	if (noclip) {
+		if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS){
+			position += up * delta * PLAYER_SPEED;
+		}
+		if (glfwGetKey( window, GLFW_KEY_Q) == GLFW_PRESS){
+			position -= up * delta * PLAYER_SPEED;
+		}
 	}
 
 	// // Gravity

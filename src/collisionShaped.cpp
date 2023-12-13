@@ -77,7 +77,6 @@ glm::vec3 CollisionSphere::support_function(glm::vec3 direction) {
 	// Direction must be normalized and with w == 0
 
 	glm::vec3 center = matrix * glm::vec4(0, 0, 0, 1);
-	printf("sphere center : %f, %f, %f\n", center.x, center.y, center.z);
 	return center + direction * radius;
 }
 
@@ -91,12 +90,12 @@ glm::vec3 CollisionAAB::support_function(glm::vec3 direction) {
 	// Direction must be normalized and with w == 0
 
 	glm::vec3 best_point;
-	float best_score = std::numeric_limits<float>::min();
+	float best_score = -std::numeric_limits<float>::infinity();
 
-	for (int i = 0; i < 8; i++) {
+	for (uint i = 0; i < 8; i++) {
 		glm::vec3 point;
-		for (int d = 0; d < 3; d++) {
-			if ((i >> d) && 1) {
+		for (uint d = 0; d < 3; d++) {
+			if ((i >> d) & 1) {
 				point[d] = max_point[d];
 			}
 			else {

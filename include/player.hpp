@@ -10,7 +10,7 @@ class Player {
 		bool noclip = true;
 
 		glm::vec3 position = glm::vec3(0, 0, 1.8);
-		float theta = 0;
+		float theta = M_PI;
 		float phi = 0;
 
 		glm::mat4 model;
@@ -18,6 +18,7 @@ class Player {
 
 	public:
 		bool collides(ColShape *other);
+		CollisionSphere *get_collider();	
 		void process_physics(GLFWwindow *window, float delta);
 		glm::mat4 get_model_matrix();
 		glm::mat4 get_view_matrix();
