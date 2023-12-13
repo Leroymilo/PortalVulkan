@@ -27,8 +27,8 @@ struct Vertex {
 };
 
 template<> struct std::hash<Vertex> {
-	std::size_t operator()(Vertex const& vertex) const {
-		std::size_t result = std::hash<glm::vec3>()(vertex.pos);
+	size_t operator()(Vertex const& vertex) const {
+		size_t result = std::hash<glm::vec3>()(vertex.pos);
 		result = (result ^ (std::hash<glm::vec3>()(vertex.tangent) << 1)) >> 1;
 		result = (result ^ (std::hash<glm::vec3>()(vertex.bitangent) << 1)) >> 1;
 		result = (result ^ (std::hash<glm::vec3>()(vertex.normal) << 1)) >> 1;

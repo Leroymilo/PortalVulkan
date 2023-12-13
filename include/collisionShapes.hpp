@@ -4,6 +4,17 @@
 #include "glm/glm.hpp"
 
 
+struct Edge {
+	size_t A;
+	size_t B;
+
+	bool operator==(const Edge &other) const;
+
+	struct hash {
+		size_t operator()(const Edge &edge) const;
+	};
+};
+
 class ColShape {
 	protected:
 		glm::mat4 matrix = glm::mat4(1.0f);
@@ -11,7 +22,8 @@ class ColShape {
 	public:
 		void set_transform(glm::mat4 new_matrix);
 		virtual glm::vec3 support_function(glm::vec3 dir) = 0;
-		bool collides(ColShape *other);
+		bool GJK(ColShape *other, std::vector<glm::vec3> *simplex);
+		glm::vec3 EPA(ColShape *other, std::vector<glm::vec3> &vertices);
 };
 
 class CollisionSphere: public ColShape {

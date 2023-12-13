@@ -35,7 +35,7 @@ static std::vector<char> readFile(const std::string& filename) {
         throw std::runtime_error("failed to open file!");
     }
 
-	std::size_t fileSize = (std::size_t) file.tellg();
+	size_t fileSize = (size_t) file.tellg();
 	std::vector<char> buffer(fileSize);
 
 	file.seekg(0);
@@ -827,7 +827,7 @@ void VulkanApp::createGraphicsPipeline() {
 void VulkanApp::createFramebuffers() {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
-	for (std::size_t i = 0; i < swapChainImageViews.size(); i++) {
+	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
 		std::array<VkImageView, 3> attachments = {
 			colorImageView,
     		depthImageView,
@@ -1243,7 +1243,7 @@ Texture VulkanApp::createTexture(std::string tex_name) {
 
 	void* data;
 	vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-		memcpy(data, pixels, static_cast<std::size_t>(imageSize));
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	stbi_image_free(pixels);
@@ -1345,7 +1345,7 @@ void VulkanApp::createVertexBuffer() {
 
 	void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (std::size_t) bufferSize);
+        memcpy(data, vertices.data(), (size_t) bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(
@@ -1374,7 +1374,7 @@ void VulkanApp::createIndexBuffer() {
 
 	void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (std::size_t) bufferSize);
+        memcpy(data, indices.data(), (size_t) bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(
@@ -1397,7 +1397,7 @@ void VulkanApp::createUniformBuffers() {
     uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
-    for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
@@ -1451,7 +1451,7 @@ void VulkanApp::createDescriptorSets() {
 		Texture texture = tex_item.second;
 		Texture norm_map = norm_maps[tex_name];
 
-		for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			int ij = i + j * MAX_FRAMES_IN_FLIGHT;
 
 			std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
@@ -1537,7 +1537,7 @@ void VulkanApp::createSyncObjects() {
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
@@ -1821,7 +1821,7 @@ void VulkanApp::cleanup() {
 		item.second.cleanup(device);
 	}
 
-    for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(device, uniformBuffers[i], nullptr);
         vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
     }
@@ -1836,7 +1836,7 @@ void VulkanApp::cleanup() {
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
     vkFreeMemory(device, vertexBufferMemory, nullptr);
 
-	for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);

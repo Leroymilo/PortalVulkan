@@ -1,4 +1,5 @@
 #include <cmath>
+#include <vector>
 
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -8,7 +9,14 @@ const float MOUSE_SPEED = 0.005f;
 const float PLAYER_SPEED = 2.0f;
 
 bool Player::collides(ColShape *other) {
-	return collider.ColShape::collides(other);
+	std::vector<glm::vec3> simplex;
+
+	if (collider.ColShape::GJK(other, &simplex)) {
+		collider.ColShape::EPA(other, simplex);
+		return true;
+	}
+
+	return false;
 }
 
 CollisionSphere *Player::get_collider() {

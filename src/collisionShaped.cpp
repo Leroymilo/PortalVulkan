@@ -3,8 +3,24 @@
 
 #include "../include/collisionShapes.hpp"
 
+#define O glm::vec3(0, 0, 0)
 
-const glm::vec3 O = glm::vec3(0, 0, 0);
+
+const float EPSILON = 0.1;
+
+
+// For edge unordered_set
+
+bool Edge::operator==(const Edge &other) const {
+	return (
+		this->A == other.A && this->B == other.B ||
+		this->A == other.B && this->B == other.A
+	);
+}
+
+size_t Edge::hash::operator()(const Edge &edge) const {
+	return edge.A ^ (edge.B << 1);
+}
 
 
 // Any shape
@@ -13,7 +29,7 @@ void ColShape::set_transform(glm::mat4 new_matrix) {
 	matrix = new_matrix;
 }
 
-bool ColShape::collides(ColShape *other) {
+bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 	glm::vec3 A, B, C, D;
 	glm::vec3 dir = glm::vec3(1, 0, 0);
 
@@ -62,7 +78,64 @@ bool ColShape::collides(ColShape *other) {
 		}
 
 		// Origin on the right side of all planes of simplex, so in simplex
+		simplex->assign({A, B, C, D});
 		return true;
+	}
+}
+
+glm::vec3 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
+	std::vector<size_t> faces = {
+		0, 1, 2,
+		0, 1, 3,
+		0, 2, 3,
+		1, 2, 3
+	};
+
+	while(true) {
+
+		struct {
+			size_t index = -1;
+			float dist = std::numeric_limits<float>::infinity();
+			glm::vec3 normal;
+		} best_face;
+
+		for (size_t i = 0; i < faces.size(); i += 3) {
+			glm::vec3 A = vertices[faces[i]];
+			glm::vec3 B = vertices[faces[i+1]];
+			glm::vec3 C = vertices[faces[i+2]];
+
+
+			glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
+			float dist = glm::dot(A, normal);
+
+			if (dist < 0) {
+				dist = -dist;
+				normal = -normal;
+			}
+
+			if (dist < best_face.dist) {
+				best_face.index = i;
+				best_face.dist = dist;
+				best_face.normal = normal;
+			}
+		}
+
+		glm::vec3 dir = best_face.normal;
+
+		if (best_face.dist == 0) {
+			// special case : origin on face
+			glm::vec3 A = vertices[faces[best_face.index]];
+			glm::vec3 B = vertices[(faces[best_face.index+2]+1)%faces.size()];
+			if (glm::dot(dir, B - A) > 0) dir = -dir;
+		}
+
+		glm::vec3 P = this->support_function(dir) - other->support_function(-dir);
+		float dist = glm::dot(dir, P);
+		if (dist - best_face.dist <= EPSILON) return dist * dir;
+		
+
+		//TODO : extend polyhedra to P
+
 	}
 }
 
