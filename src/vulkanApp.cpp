@@ -1,20 +1,10 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <limits>
-
-#include <array>
-#include <set>
-#include <unordered_map>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/libs/stb_image.h"
@@ -27,8 +17,8 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const uint32_t WIDTH = 1600;
-const uint32_t HEIGHT = 900;
+static int width = 1600;
+static int height = 900;
 const float FoV = 90.0f;
 
 
@@ -102,7 +92,7 @@ void VulkanApp::initWindow() {
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 	glfwSetWindowUserPointer(window, this);	// gives a reference to the app for callbacks
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
@@ -456,7 +446,6 @@ VkExtent2D VulkanApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
 		return capabilities.currentExtent;
 	}
 	else {
-		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 
 		VkExtent2D actualExtent = {
@@ -1661,7 +1650,9 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 
 	world.get_matrices(&ubo.view);
 
-	ubo.proj = glm::perspective(glm::radians(FoV), WIDTH / float(HEIGHT), 0.01f, 100.0f);
+	glfwGetWindowSize(window, &width, &height);
+
+	ubo.proj = glm::perspective(glm::radians(FoV), width / float(height), 0.01f, 100.0f);
 	ubo.proj[1][1] *= -1;
 
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1737,7 +1728,7 @@ void VulkanApp::drawFrame() {
 
 void VulkanApp::recreateSwapChain() {
 	// minimization can not be tested on fedora...
-    int width = 0, height = 0;
+    width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
     while (width == 0 || height == 0) {
         glfwWaitEvents();
@@ -1761,7 +1752,7 @@ void VulkanApp::mainLoop() {
 	
 	// Set the mouse at the center of the screen
 	glfwPollEvents();
-	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+	glfwSetCursorPos(window, width/2, height/2);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	bool paused = false;
@@ -1789,7 +1780,10 @@ void VulkanApp::mainLoop() {
 		bool esc_press = glfwGetKey( window, GLFW_KEY_ESCAPE ) == GLFW_PRESS;
 		if (esc_press && !prev_esc_press){
 			paused = !paused;
-			printf("toggle pause\n");
+			if (!paused) {
+				glfwGetWindowSize(window, &width, &height);
+				glfwSetCursorPos(window, width/2, height/2);
+			}
 		}
 		prev_esc_press = esc_press;
 	}

@@ -1,13 +1,11 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
-#include <unordered_set>
-#include <tuple>
 #include <vector>
+#include <unordered_map>
 
 #include "player.hpp"
 #include "brushes.hpp"
-#include "vertex.hpp"
 
 class World {
 	private:
@@ -29,16 +27,5 @@ class World {
 		void get_matrices(glm::mat4 *view);
 		void cmd_draw_indexed(RenderInfo &render_info);
 };
-
-namespace std {
-	template<> struct hash<tuple<string, string>> {
-		size_t operator()(tuple<string, string> const& tex_comb) const {
-			size_t result = hash<string>() ( get<0> (tex_comb) );
-			result = result ^ (hash<string>() ( get<0> (tex_comb) ) << 1);
-			return result;
-		}
-	};
-}
-
 
 #endif //WORLD_HPP

@@ -1,17 +1,14 @@
 #ifndef COLLISION_SHAPES_HDD
 #define COLLISION_SHAPES_HDD
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/glm.hpp"
+
 
 class ColShape {
 	protected:
+		glm::mat4 matrix = glm::mat4(1.0f);
 	
 	public:
-		glm::mat4 matrix = glm::mat4(1.0f);
-		
 		void set_transform(glm::mat4 new_matrix);
 		virtual glm::vec3 support_function(glm::vec3 dir) = 0;
 		bool collides(ColShape *other);

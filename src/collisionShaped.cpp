@@ -1,13 +1,11 @@
 #include <limits>
-#include <stdio.h>
-#include <iostream>
 #include <vector>
-
-#include <glm/gtx/string_cast.hpp>
 
 #include "../include/collisionShapes.hpp"
 
+
 const glm::vec3 O = glm::vec3(0, 0, 0);
+
 
 // Any shape
 

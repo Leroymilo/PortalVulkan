@@ -1,5 +1,7 @@
 #include <cmath>
 
+#include "glm/gtc/matrix_transform.hpp"
+
 #include "../include/player.hpp"
 
 const float MOUSE_SPEED = 0.005f;
@@ -47,8 +49,8 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	}
 
 	glm::vec3 right = glm::vec3(
-		std::sin(	theta - M_PI/2.0f),
-		-std::cos(	theta - M_PI/2.0f), 
+		std::sin(	(float)(theta - M_PI/2.0f)),
+		-std::cos(	(float)(theta - M_PI/2.0f)), 
 		0
 	);
 

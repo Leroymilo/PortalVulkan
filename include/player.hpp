@@ -1,8 +1,12 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include "collisionShapes.hpp"
-#include "glm/glm.hpp"
+
+#define M_PI 3.14159265358979323846	//because VSCode can't read include again...
 
 class Player {
 	private:

@@ -1,9 +1,5 @@
 #include <string>
-#include <unordered_map>
-#include <stdio.h>
-#include <iostream>
-
-#include <glm/gtx/string_cast.hpp>
+#include <unordered_set>
 
 #include "../include/world.hpp"
 
@@ -89,18 +85,15 @@ void World::process_physics(GLFWwindow *window) {
 	// 	}
 	// }
 
-	glm::mat4 player_mat = player.get_model_matrix();
-	printf("player position : %f, %f, %f\n", player_mat[3].x, player_mat[3].y, player_mat[3].z);
-
 	if (player.collides(simple_brushes[0].get_collider_p())) {
 		printf("floor collision!\n");
 	}
-	// if (player.collides(simple_brushes[1].get_collider_p())) {
-	// 	printf("right wall collision!\n");
-	// }
-	// if (player.collides(simple_brushes[2].get_collider_p())) {
-	// 	printf("left wall collision!\n");
-	// }
+	if (player.collides(simple_brushes[1].get_collider_p())) {
+		printf("right wall collision!\n");
+	}
+	if (player.collides(simple_brushes[2].get_collider_p())) {
+		printf("left wall collision!\n");
+	}
 
 	lastTime = currentTime;
 }
