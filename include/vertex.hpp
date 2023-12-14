@@ -9,11 +9,6 @@
 #include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
 
-#ifndef offsetof
-// because VSCode can't find it for some reason...
-#define offsetof(s, m) (long)(&(((s*)0)->m))
-#endif
-
 struct Vertex {
     glm::vec3 pos;
 	glm::vec3 tangent 	/*= glm::vec3(1, 0, 0)*/;

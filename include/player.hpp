@@ -20,10 +20,12 @@ class Player {
 		glm::mat4 model;
 		glm::mat4 view;
 
+		void compute_transforms();
+
 	public:
-		bool collides(ColShape *other);
-		CollisionSphere *get_collider();	
 		void process_physics(GLFWwindow *window, float delta);
+		CollisionSphere *get_collider();
+		bool collides(ColShape *other);
 		glm::mat4 get_model_matrix();
 		glm::mat4 get_view_matrix();
 };

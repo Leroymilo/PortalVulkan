@@ -1,7 +1,7 @@
 #include <cmath>
 #include <vector>
 
-#include <stdio.h>
+#include <iostream>
 
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -10,24 +10,30 @@
 const float MOUSE_SPEED = 0.005f;
 const float PLAYER_SPEED = 2.0f;
 
-bool Player::collides(ColShape *other) {
-	std::vector<glm::vec3> simplex;
+void Player::compute_transforms() {
 
-	if (collider.ColShape::GJK(other, &simplex)) {
-		glm::vec3 push_dir = collider.ColShape::EPA(other, simplex);
+	glm::vec3 direction(
+		sin(theta),
+		cos(theta),
+		0
+	);
 
-		this->position -= push_dir;
-		this->model = glm::translate(this->model, -push_dir);
-		this->view = glm::translate(this->view, -push_dir);
+	model = glm::inverse(glm::lookAt(position, position + direction, glm::vec3(0, 0, 1)));
+	collider.ColShape::set_transform(model);
 
-		return true;
-	}
+	direction = glm::vec3(
+		std::cos(phi) * std::sin(theta),
+		- std::cos(phi) * std::cos(theta), 
+		std::sin(phi)
+	);
 
-	return false;
-}
+	glm::vec3 up(
+		- std::sin(phi) * std::sin(theta),
+		std::sin(phi) * std::cos(theta),
+		std::cos(phi) * std::abs(std::cos(2 * theta))
+	);
 
-CollisionSphere *Player::get_collider() {
-	return &collider;
+	view = glm::lookAt(position, position + direction, up);
 }
 
 void Player::process_physics(GLFWwindow *window, float delta) {
@@ -69,8 +75,6 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 		0
 	);
 
-	// Up vector
-	glm::vec3 up = glm::cross( right, direction );
 
 	// Move forward
 	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
@@ -91,6 +95,10 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 
 	// Flying
 	if (noclip) {
+
+		// Up vector
+		glm::vec3 up = glm::cross( right, direction );
+
 		if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS){
 			position += up * delta * PLAYER_SPEED;
 		}
@@ -104,16 +112,26 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	// 	position 
 	// }
 
-	// collides
+	compute_transforms();
+}
 
-	model = glm::translate(glm::mat4(1), position);
-	collider.ColShape::set_transform(model);
+CollisionSphere *Player::get_collider() {
+	return &collider;
+}
 
-	view = glm::lookAt(
-		position,
-		position + direction,
-		up
-	);
+bool Player::collides(ColShape *other) {
+	std::vector<glm::vec3> simplex;
+
+	if (collider.ColShape::GJK(other, &simplex)) {
+		glm::vec3 push_dir = collider.ColShape::EPA(other, simplex);
+
+		position -= push_dir;
+		compute_transforms();
+
+		return true;
+	}
+
+	return false;
 }
 
 glm::mat4 Player::get_model_matrix() {
