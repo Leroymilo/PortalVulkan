@@ -5,8 +5,8 @@
 
 
 struct Edge {
-	size_t A;
-	size_t B;
+	size_t a;
+	size_t b;
 
 	bool operator==(const Edge &other) const;
 

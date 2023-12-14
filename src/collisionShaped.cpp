@@ -1,25 +1,30 @@
 #include <limits>
+#include <unordered_set>
 #include <vector>
+
+#include <stdio.h>
 
 #include "../include/collisionShapes.hpp"
 
 #define O glm::vec3(0, 0, 0)
 
 
-const float EPSILON = 0.1;
+const float EPSILON = 0.001;
 
 
-// For edge unordered_set
+// Required to make std::unordered_set<Edge>
 
 bool Edge::operator==(const Edge &other) const {
 	return (
-		this->A == other.A && this->B == other.B ||
-		this->A == other.B && this->B == other.A
+		(this->a == other.a && this->b == other.b) ||
+		(this->a == other.b && this->b == other.a)
 	);
 }
 
 size_t Edge::hash::operator()(const Edge &edge) const {
-	return edge.A ^ (edge.B << 1);
+	size_t a = edge.a, b = edge.b;
+	return a >= b ? a * a + a + b : a + b * b;
+	// from https://stackoverflow.com/a/13871379
 }
 
 
@@ -83,6 +88,91 @@ bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 	}
 }
 
+size_t get_closest_face(
+	std::vector<glm::vec3> &vertices,
+	std::vector<size_t> &faces,
+	std::vector<glm::vec3> &normals,
+	float &best_dist
+) {
+	size_t best_face;
+
+	for (size_t i = 0; i < faces.size() / 3; i++) {
+		glm::vec3 A = vertices[faces[3 * i]];
+		glm::vec3 B = vertices[faces[3 * i + 1]];
+		glm::vec3 C = vertices[faces[3 * i + 2]];
+
+		glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
+		float dist = glm::dot(A, normal);
+
+		if (dist < 0) {
+			dist = -dist;
+			normal = -normal;
+		}
+
+		normals[i] = normal;
+
+		if (dist < best_dist) {
+			best_face = i;
+			best_dist = dist;
+		}
+	}
+
+	return best_face;
+}
+
+std::vector<size_t> get_new_faces(
+	std::vector<glm::vec3> &vertices,
+	std::vector<size_t> &faces,
+	std::vector<glm::vec3> &normals,
+	glm::vec3 &P
+) {
+	std::unordered_set<Edge, Edge::hash> edges;
+	std::vector<size_t> new_faces;
+
+	for (size_t i = 0; i < faces.size() / 3; i++) {
+		glm::vec3 A = vertices[faces[3 * i]];
+
+		if (glm::dot(normals[i], P) >= 0) {
+			// this face is inside the new polyhedra
+			// marking edges to be removed
+			for (short j = 0; j < 3; j++) {
+				Edge edge = {
+					faces[3*i + j],
+					faces[3*i + (j+1)%3]
+				};
+
+				if (!edges.insert(edge).second) {
+					// if an edge is "removed" twice, then it's inside the new polyhedra
+					edges.erase(edge);
+				}
+			}
+		}
+
+		else {
+			// we keep this face
+			new_faces.insert(new_faces.end(), {
+				faces[3 * i],
+				faces[3 * i + 1],
+				faces[3 * i + 2],
+			});
+		}
+	}
+
+	// adding new faces:
+	size_t i_P = vertices.size();
+	vertices.push_back(P);
+
+	for (const Edge &edge: edges) {
+		new_faces.insert(new_faces.end(), {
+			i_P,
+			edge.a,
+			edge.b
+		});
+	}
+
+	return new_faces;
+}
+
 glm::vec3 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 	std::vector<size_t> faces = {
 		0, 1, 2,
@@ -92,50 +182,39 @@ glm::vec3 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 	};
 
 	while(true) {
+		
+		// searching the face closest to the origin
+		float best_dist = std::numeric_limits<float>::infinity();
 
-		struct {
-			size_t index = -1;
-			float dist = std::numeric_limits<float>::infinity();
-			glm::vec3 normal;
-		} best_face;
+		std::vector<glm::vec3> normals;
+		normals.resize(faces.size() / 3);
 
-		for (size_t i = 0; i < faces.size(); i += 3) {
-			glm::vec3 A = vertices[faces[i]];
-			glm::vec3 B = vertices[faces[i+1]];
-			glm::vec3 C = vertices[faces[i+2]];
+		size_t best_face = get_closest_face(vertices, faces, normals, best_dist);
 
+		glm::vec3 dir = normals[best_face];
 
-			glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
-			float dist = glm::dot(A, normal);
-
-			if (dist < 0) {
-				dist = -dist;
-				normal = -normal;
+		// special case : origin on closest face
+		if (best_dist == 0) {
+			glm::vec3 A = vertices[faces[3 * best_face]];
+			glm::vec3 B;
+			for (int i = 0; i < vertices.size(); i++) {
+				B = vertices[i];
+				if (glm::dot(dir, B - A) != 0) break;
 			}
-
-			if (dist < best_face.dist) {
-				best_face.index = i;
-				best_face.dist = dist;
-				best_face.normal = normal;
-			}
-		}
-
-		glm::vec3 dir = best_face.normal;
-
-		if (best_face.dist == 0) {
-			// special case : origin on face
-			glm::vec3 A = vertices[faces[best_face.index]];
-			glm::vec3 B = vertices[(faces[best_face.index+2]+1)%faces.size()];
+			// B is any vertex not on the face
 			if (glm::dot(dir, B - A) > 0) dir = -dir;
 		}
 
+		// getting next support point
 		glm::vec3 P = this->support_function(dir) - other->support_function(-dir);
 		float dist = glm::dot(dir, P);
-		if (dist - best_face.dist <= EPSILON) return dist * dir;
+		printf("distance between face and point : %f\n", dist - best_dist);
+		if (dist - best_dist <= EPSILON) return (dist + EPSILON) * dir;	// end
 		
+		// extending polyhedra to P
+		auto new_faces = get_new_faces(vertices, faces, normals, P);
 
-		//TODO : extend polyhedra to P
-
+		faces.swap(new_faces);
 	}
 }
 

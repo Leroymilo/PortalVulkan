@@ -1,6 +1,8 @@
 #include <cmath>
 #include <vector>
 
+#include <stdio.h>
+
 #include "glm/gtc/matrix_transform.hpp"
 
 #include "../include/player.hpp"
@@ -12,7 +14,12 @@ bool Player::collides(ColShape *other) {
 	std::vector<glm::vec3> simplex;
 
 	if (collider.ColShape::GJK(other, &simplex)) {
-		collider.ColShape::EPA(other, simplex);
+		glm::vec3 push_dir = collider.ColShape::EPA(other, simplex);
+
+		this->position -= push_dir;
+		this->model = glm::translate(this->model, -push_dir);
+		this->view = glm::translate(this->view, -push_dir);
+
 		return true;
 	}
 

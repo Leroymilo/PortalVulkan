@@ -79,20 +79,10 @@ void World::process_physics(GLFWwindow *window) {
 
 	player.process_physics(window, deltaTime);
 
-	// for (SimpleBrush &brush : simple_brushes) {
-	// 	if (player.collides(brush.get_collider_p())) {
-	// 		printf("collision !\n");
-	// 	}
-	// }
-
-	if (player.collides(simple_brushes[0].get_collider_p())) {
-		printf("floor collision!\n");
-	}
-	if (player.collides(simple_brushes[1].get_collider_p())) {
-		printf("right wall collision!\n");
-	}
-	if (player.collides(simple_brushes[2].get_collider_p())) {
-		printf("left wall collision!\n");
+	for (SimpleBrush &brush : simple_brushes) {
+		if (player.collides(brush.get_collider_p())) {
+			// printf("collision !\n");
+		}
 	}
 
 	lastTime = currentTime;

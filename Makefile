@@ -1,4 +1,4 @@
-CFLAGS = -std=c++17 #-O2
+CFLAGS = -std=c++17 -g #-O2
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 OBJ_DIR := ./objects
@@ -11,8 +11,8 @@ V_SPIV 		:= $(V_SHADERS:%.vert=$(OBJ_DIR)/%_vert.spv)
 F_SHADERS 	:= $(wildcard shaders/*.frag)
 F_SPIV 		:= $(F_SHADERS:%.frag=$(OBJ_DIR)/%_frag.spv)
 
-HelloTriangle: $(OBJECTS) $(V_SPIV) $(F_SPIV) main.cpp
-	g++ $(CFLAGS) $(OBJECTS) -o HelloTriangle.x86_64 main.cpp $(LDFLAGS)
+VulkanPortal: $(OBJECTS) $(V_SPIV) $(F_SPIV) main.cpp
+	g++ $(CFLAGS) $(OBJECTS) -o VulkanPortal.x86_64 main.cpp $(LDFLAGS)
 
 $(OBJ_DIR)/%_vert.spv: %.vert
 	@mkdir -p $(@D)
@@ -28,9 +28,9 @@ $(OBJ_DIR)/%.o: %.cpp
 
 .PHONY: test clean
 
-test: HelloTriangle
-	./HelloTriangle.x86_64
+test: VulkanPortal
+	./VulkanPortal.x86_64
 
 clean:
-	rm -f HelloTriangle
+	rm -f VulkanPortal
 	rm -r objects

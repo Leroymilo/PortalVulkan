@@ -17,8 +17,8 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-static int width = 1600;
-static int height = 900;
+static int width = 1200;
+static int height = 675;
 const float FoV = 90.0f;
 
 
