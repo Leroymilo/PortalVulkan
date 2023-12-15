@@ -23,7 +23,7 @@ class ColShape {
 		void set_transform(glm::mat4 new_matrix);
 		virtual glm::vec3 support_function(glm::vec3 dir) = 0;
 		bool GJK(ColShape *other, std::vector<glm::vec3> *simplex);
-		glm::vec3 EPA(ColShape *other, std::vector<glm::vec3> &vertices);
+		glm::vec4 EPA(ColShape *other, std::vector<glm::vec3> &vertices);
 };
 
 class CollisionSphere: public ColShape {
@@ -36,12 +36,22 @@ class CollisionSphere: public ColShape {
 };
 
 class CollisionAAB: public ColShape {
+	// /!\ this collision shape ignores its transform matrix
 	private:
 		glm::vec3 min_point;
 		glm::vec3 max_point;
 	
 	public :
 		CollisionAAB(glm::vec3 min_point, glm::vec3 max_point);
+		glm::vec3 support_function(glm::vec3 dir) override;
+};
+
+class CollisionCube: public ColShape {
+	private:
+		float size;	// the length of an edge
+
+	public:
+		CollisionCube(float size);
 		glm::vec3 support_function(glm::vec3 dir) override;
 };
 

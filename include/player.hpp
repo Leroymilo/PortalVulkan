@@ -24,7 +24,7 @@ class Player {
 
 	public:
 		void process_physics(GLFWwindow *window, float delta);
-		CollisionSphere *get_collider();
+		ColShape *get_collider();
 		bool collides(ColShape *other);
 		glm::mat4 get_model_matrix();
 		glm::mat4 get_view_matrix();

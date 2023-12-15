@@ -79,10 +79,12 @@ void World::process_physics(GLFWwindow *window) {
 
 	player.process_physics(window, deltaTime);
 
+	int i = 0;
 	for (SimpleBrush &brush : simple_brushes) {
 		if (player.collides(brush.get_collider_p())) {
-			// printf("collision !\n");
+			printf("collision with brush %i!\n", i);
 		}
+		i++;
 	}
 
 	lastTime = currentTime;

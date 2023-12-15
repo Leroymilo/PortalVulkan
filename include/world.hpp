@@ -2,6 +2,7 @@
 #define WORLD_HPP
 
 #include <vector>
+#include <string>
 #include <unordered_map>
 
 #include "player.hpp"
