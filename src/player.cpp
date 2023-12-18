@@ -122,8 +122,8 @@ ColShape *Player::get_collider() {
 bool Player::collides(ColShape *other) {
 	std::vector<glm::vec3> simplex;
 
+	std::cout << "pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
 	if (collider.ColShape::GJK(other, &simplex)) {
-		std::cout << "pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
 		
 		glm::vec4 result = collider.ColShape::EPA(other, simplex);
 		glm::vec3 push_dir = result;
@@ -134,7 +134,7 @@ bool Player::collides(ColShape *other) {
 		position -= glm::vec3(push_dir) * push_dist;
 		compute_transforms();
 
-		std::cout << "new pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
+		// std::cout << "new pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
 		return true;
 	}
 

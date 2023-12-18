@@ -6,15 +6,15 @@
 
 #include "collisionShapes.hpp"
 
-#define M_PI 3.14159265358979323846	//because VSCode can't read include again...
+// #define M_PI 3.14159265358979323846	//because VSCode can't read include again...
 
 class Player {
 	private:
-		CollisionSphere collider = CollisionSphere(0.1);
+		CollisionCube collider = CollisionCube(0.2);
 		bool noclip = true;
 
 		glm::vec3 position = glm::vec3(0, 0, 1.8);
-		float theta = M_PI;
+		float theta = 0;
 		float phi = 0;
 
 		glm::mat4 model;

@@ -1,7 +1,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <stdio.h>
+#include <iostream>
 
 #include "../include/collisionShapes.hpp"
 
@@ -87,84 +87,73 @@ bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 	}
 }
 
-size_t get_normals(
+size_t get_closest_face(
 	std::vector<glm::vec3> &vertices,
 	std::vector<size_t> &faces,
-	std::vector<glm::vec4> &normals
+	std::vector<glm::vec3> &normals,
+	float &best_dist
 ) {
 	size_t best_face;
-	float best_dist = FLT_MAX;
 
-	for (size_t i = normals.size() * 3; i < faces.size(); i+=3) {
-		glm::vec3 A = vertices[faces[i]];
-		glm::vec3 B = vertices[faces[i + 1]];
-		glm::vec3 C = vertices[faces[i + 2]];
+	for (size_t i = 0; i < faces.size() / 3; i++) {
+		glm::vec3 A = vertices[faces[3 * i]];
+		glm::vec3 B = vertices[faces[3 * i + 1]];
+		glm::vec3 C = vertices[faces[3 * i + 2]];
 
 		glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
 		float dist = glm::dot(A, normal);
 
 		if (dist < 0) {
-			dist *= -1;
-			normal *= -1;
+			dist = -dist;
+			normal = -normal;
 		}
 
-		// emplace uses glm::vec4 constructor
-		normals.emplace_back(normal, dist);
+		normals[i] = normal;
 
 		if (dist < best_dist) {
-			best_face = i / 3;
+			best_face = i;
 			best_dist = dist;
 		}
-	}
-
-
-	// special case : origin on closest face
-	if (best_dist == 0) {
-		glm::vec3 best_norm = normals[best_face];
-		glm::vec3 A = vertices[faces[3 * best_face]];
-		glm::vec3 B;
-		for (int i = 0; i < faces.size(); i++) {
-			B = vertices[faces[i]];
-			if (glm::dot(best_norm, B - A) != 0) break;
-		}
-		// B is any vertex not on the face
-		if (glm::dot(best_norm, B - A) > 0) normals[best_face] = glm::vec4(-best_norm, best_dist);
 	}
 
 	return best_face;
 }
 
-void expand_to_P(
+std::vector<size_t> get_new_faces(
 	std::vector<glm::vec3> &vertices,
 	std::vector<size_t> &faces,
-	std::vector<glm::vec4> &normals,
+	std::vector<glm::vec3> &normals,
 	glm::vec3 &P
 ) {
-	std::unordered_set<Edge, Edge::hash> unique_edges;
+	std::unordered_set<Edge, Edge::hash> edges;
+	std::vector<size_t> new_faces;
 
-	for (size_t i = 0; i < normals.size(); i++) {
+	for (size_t i = 0; i < faces.size() / 3; i++) {
+		glm::vec3 A = vertices[faces[3 * i]];
 
-		if (glm::dot(glm::vec3(normals[i]), P) >= 0) {
+		if (glm::dot(normals[i], P) >= 0) {
 			// this face is inside the new polyhedra
 			// marking edges to be removed
-			size_t f = i * 3;
 			for (short j = 0; j < 3; j++) {
 				Edge edge = {
-					faces[f + j],
-					faces[f + (j+1)%3]
+					faces[3*i + j],
+					faces[3*i + (j+1)%3]
 				};
 
-				if (!unique_edges.insert(edge).second) {
+				if (!edges.insert(edge).second) {
 					// if an edge is "removed" twice, then it's inside the new polyhedra
-					unique_edges.erase(edge);
+					edges.erase(edge);
 				}
-
-				faces[f + 2 - j] = faces.back(); faces.pop_back();
 			}
+		}
 
-			normals[i] = normals.back(); normals.pop_back();
-
-			i--;
+		else {
+			// we keep this face
+			new_faces.insert(new_faces.end(), {
+				faces[3 * i],
+				faces[3 * i + 1],
+				faces[3 * i + 2],
+			});
 		}
 	}
 
@@ -172,18 +161,18 @@ void expand_to_P(
 	size_t i_P = vertices.size();
 	vertices.push_back(P);
 
-	for (const Edge &edge: unique_edges) {
-		faces.insert(faces.end(), {
+	for (const Edge &edge: edges) {
+		new_faces.insert(new_faces.end(), {
 			i_P,
 			edge.a,
 			edge.b
 		});
 	}
+
+	return new_faces;
 }
 
 glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
-	// adapted from https://www.youtube.com/watch?v=0XQ2FSz3EK8
-
 	std::vector<size_t> faces = {
 		0, 1, 2,
 		0, 1, 3,
@@ -191,44 +180,41 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 		1, 2, 3
 	};
 
-	// computing first normals
-	std::vector<glm::vec4> normals;
-	size_t best_face = get_normals(vertices, faces, normals);
+	while(true) {
+		
+		// searching the face closest to the origin
+		float best_dist = std::numeric_limits<float>::infinity();
 
-	glm::vec3 dir;
-	float best_dist = FLT_MAX;
+		std::vector<glm::vec3> normals;
+		normals.resize(faces.size() / 3);
 
-	while(best_dist == FLT_MAX) {
+		size_t best_face = get_closest_face(vertices, faces, normals, best_dist);
 
-		dir 		= normals[best_face];
-		best_dist 	= normals[best_face].w;
+		glm::vec3 dir = normals[best_face];
+
+		// special case : origin on closest face
+		if (best_dist == 0) {
+			glm::vec3 A = vertices[faces[3 * best_face]];
+			glm::vec3 B;
+			for (int i = 0; i < vertices.size(); i++) {
+				B = vertices[i];
+				if (glm::dot(dir, B - A) != 0) break;
+			}
+			// B is any vertex not on the face
+			if (glm::dot(dir, B - A) > 0) dir = -dir;
+		}
 
 		// getting next support point
 		glm::vec3 P = this->support_function(dir) - other->support_function(-dir);
-		float P_dist = glm::dot(dir, P);
+		float dist = glm::dot(dir, P);
+		printf("distance between face and point : %f\n", dist - best_dist);
+		if (dist - best_dist <= EPSILON) return glm::vec4(dir, dist + EPSILON);	// end
 		
-		if (abs(P_dist - best_dist) > EPSILON) {
-			best_dist = FLT_MAX;
+		// extending polyhedra to P
+		auto new_faces = get_new_faces(vertices, faces, normals, P);
 
-			expand_to_P(vertices, faces, normals, P);
-
-			float old_best_dist = FLT_MAX;
-			for (size_t i = 0; i < normals.size(); i++) {
-				if (normals[i].w < old_best_dist) {
-					best_face = i;
-					old_best_dist = normals[i].w;
-				}
-			}
-
-			size_t new_best_face = get_normals(vertices, faces, normals);
-
-			if (normals[new_best_face].w < old_best_dist) {
-				best_face = new_best_face;
-			}
-		}
+		faces.swap(new_faces);
 	}
-
-	return glm::vec4(dir, best_dist + EPSILON);
 }
 
 
@@ -253,7 +239,7 @@ glm::vec3 CollisionAAB::support_function(glm::vec3 dir) {
 	// Direction must be normalized
 
 	glm::vec3 best_point;
-	float best_score = -std::numeric_limits<float>::infinity();
+	float best_score = -FLT_MAX;
 
 	for (uint i = 0; i < 8; i++) {
 		glm::vec3 point;
@@ -284,13 +270,17 @@ CollisionCube::CollisionCube(float size): size(size) {};
 glm::vec3 CollisionCube::support_function(glm::vec3 dir) {
 	// Direction must be normalized
 
+	// std::cout << "dir global : " << dir.x << ", " << dir.y << ", " << dir.z << std::endl;
+
 	dir = glm::inverse(matrix) * glm::vec4(dir, 0);
 
-	glm::vec3 best_point(size/2);
-	float best_score = -std::numeric_limits<float>::infinity();
+	// std::cout << "dir local : " << dir.x << ", " << dir.y << ", " << dir.z << std::endl;
+
+	glm::vec3 best_point;
+	float best_score = -FLT_MAX;
 
 	for (uint i = 0; i < 8; i++) {
-		glm::vec3 point;
+		glm::vec3 point(size/2);
 		for (uint d = 0; d < 3; d++) {
 			if (!((i >> d) & 1)) {
 				point[d] *= -1;
@@ -303,6 +293,12 @@ glm::vec3 CollisionCube::support_function(glm::vec3 dir) {
 			best_point = point;
 		}
 	}
+
+	// std::cout << "point local : " << best_point.x << ", " << best_point.y << ", " << best_point.z << std::endl;
+	
+	best_point = matrix * glm::vec4(best_point, 1);
+
+	// std::cout << "point global : " << best_point.x << ", " << best_point.y << ", " << best_point.z << std::endl;
 
 	return best_point;
 }
