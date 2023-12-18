@@ -122,14 +122,20 @@ ColShape *Player::get_collider() {
 bool Player::collides(ColShape *other) {
 	std::vector<glm::vec3> simplex;
 
-	std::cout << "pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
+	// std::cout << "pos : " << position.x << ", " << position.y << ", " << position.z << std::endl;
 	if (collider.ColShape::GJK(other, &simplex)) {
+
+		// std::cout << "simplex :" << std::endl;
+		// std::cout << "\t" << simplex[0].x << ", " << simplex[0].y << ", " << simplex[0].z << std::endl;
+		// std::cout << "\t" << simplex[1].x << ", " << simplex[1].y << ", " << simplex[1].z << std::endl;
+		// std::cout << "\t" << simplex[2].x << ", " << simplex[2].y << ", " << simplex[2].z << std::endl;
+		// std::cout << "\t" << simplex[3].x << ", " << simplex[3].y << ", " << simplex[3].z << std::endl;
 		
 		glm::vec4 result = collider.ColShape::EPA(other, simplex);
 		glm::vec3 push_dir = result;
 		float push_dist = result.w;
 
-		std::cout << "push_dir : " << push_dir.x << ", " << push_dir.y << ", " << push_dir.z << ", " << push_dist << std::endl;
+		// std::cout << "push_dir : " << push_dir.x << ", " << push_dir.y << ", " << push_dir.z << ", " << push_dist << std::endl;
 
 		position -= glm::vec3(push_dir) * push_dist;
 		compute_transforms();

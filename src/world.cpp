@@ -82,7 +82,7 @@ void World::process_physics(GLFWwindow *window) {
 	int i = 0;
 	for (SimpleBrush &brush : simple_brushes) {
 		if (player.collides(brush.get_collider_p())) {
-			printf("collision with brush %i!\n", i);
+			// printf("collision with brush %i!\n", i);
 		}
 		i++;
 	}
