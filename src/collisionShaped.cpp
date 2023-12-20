@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
 #include "../include/collisionShapes.hpp"
 
 #define O glm::vec3(0, 0, 0)
@@ -21,9 +24,8 @@ bool Edge::operator==(const Edge &other) const {
 }
 
 size_t Edge::hash::operator()(const Edge &edge) const {
-	size_t a = edge.a, b = edge.b;
+	size_t a = std::min(edge.a, edge.b), b = std::max(edge.a, edge.b);
 	return a >= b ? a * a + a + b : a + b * b;
-	// from https://stackoverflow.com/a/13871379
 }
 
 
@@ -147,15 +149,14 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 		glm::vec3 best_norm = normals[best_face];
 
 		// special case : origin on closest face
-		if (best_dist < 10 * EPSILON) {
-			std::cout << "special case" << std::endl;
+		if (best_dist == 0) {
 			glm::vec3 dir = normals[best_face];
 			glm::vec3 A = vertices[faces[3 * best_face]];
 			glm::vec3 B;
 			for (size_t f = 0; f < faces.size(); f++) {
 				B = vertices[faces[f]];
 				if (A == B) continue;
-				if (glm::dot(dir, glm::normalize(B - A)) > EPSILON) break;
+				if (glm::dot(dir, glm::normalize(B - A)) != 0) break;
 			}
 			// B is any vertex not on the face
 			if (glm::dot(dir, B - A) > 0) {
@@ -166,14 +167,6 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 
 		glm::vec3 P = this->support_function(best_norm) - other->support_function(-best_norm);
 		float P_dist = glm::dot(best_norm, P);
-
-		size_t f = 3 * best_face;
-
-		std::cout << "face :" << std::endl;
-		std::cout << "\t" << vertices[faces[f+0]].x << ", " << vertices[faces[f+0]].y << ", " << vertices[faces[f+0]].z << std::endl;
-		std::cout << "\t" << vertices[faces[f+1]].x << ", " << vertices[faces[f+1]].y << ", " << vertices[faces[f+1]].z << std::endl;
-		std::cout << "\t" << vertices[faces[f+2]].x << ", " << vertices[faces[f+2]].y << ", " << vertices[faces[f+2]].z << std::endl;
-		std::cout << "normal : " << best_norm.x << ", " << best_norm.y << ", " << best_norm.z << std::endl;
 
 		if (std::abs(P_dist - best_dist) > EPSILON) {
 			best_dist = FLT_MAX;
@@ -200,6 +193,8 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 						faces[3*i + j] = faces.back(); faces.pop_back();
 					}
 					normals[i] = normals.back(); normals.pop_back();
+
+					i--;
 				}
 			}
 
