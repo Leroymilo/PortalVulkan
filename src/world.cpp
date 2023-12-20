@@ -1,6 +1,8 @@
 #include <string>
 #include <unordered_set>
 
+#include <iostream>
+
 #include "../include/world.hpp"
 
 World::World() {
@@ -79,12 +81,16 @@ void World::process_physics(GLFWwindow *window) {
 
 	player.process_physics(window, deltaTime);
 
-	int i = 0;
+	ColSmoothShape *player_collider = player.get_collider_p();
+
 	for (SimpleBrush &brush : simple_brushes) {
-		if (player.collides(brush.get_collider_p())) {
-			// printf("collision with brush %i!\n", i);
+
+		CollisionAAB *brush_collider = brush.get_collider_p();
+
+		if (player_collider->is_colliding(brush_collider)) {
+			glm::vec4 dir_dist = player_collider->resolve_collision(brush_collider);
+			player.nudge(dir_dist);
 		}
-		i++;
 	}
 
 	lastTime = currentTime;

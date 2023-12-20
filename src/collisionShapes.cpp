@@ -9,12 +9,19 @@
 #include "../include/collisionShapes.hpp"
 
 #define O glm::vec3(0, 0, 0)
-
+#define assertm(exp, msg) assert(((void)msg, exp))
 
 const float EPSILON = 0.001;
 
 
-// Required to make std::unordered_set<Edge>
+// Get sign
+
+template <typename T> int signum(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+
+// Required to make a proper std::unordered_set<Edge>
 
 bool Edge::operator==(const Edge &other) const {
 	return (
@@ -35,12 +42,17 @@ void ColShape::set_transform(glm::mat4 new_matrix) {
 	matrix = new_matrix;
 }
 
-bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
+
+// Collision detection
+
+bool ColShape::is_colliding(ColShape *other, std::vector<glm::vec3> *simplex) {
+	// GJK algorithm https://www.youtube.com/watch?v=ajv46BSqcK4
+
 	glm::vec3 A, B, C, D;
 	glm::vec3 dir = glm::vec3(1, 0, 0);
 
 	// first point
-	A = this->support_function(dir) - other->support_function(-dir);
+	A = this->support(dir) - other->support(-dir);
 
 	// second point
 	if (A == O) {
@@ -50,7 +62,7 @@ bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 	else {
 		dir = glm::normalize(O - A);
 	}
-	B = this->support_function(dir) - other->support_function(-dir);
+	B = this->support(dir) - other->support(-dir);
 	if (glm::dot(B, dir) < 0) return false;	// new point did not pass the origin
 
 	// third point
@@ -62,14 +74,14 @@ bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 	}
 	dir = glm::normalize(glm::cross(ortho, AB));
 	
-	C = this->support_function(dir) - other->support_function(-dir);
+	C = this->support(dir) - other->support(-dir);
 	if (glm::dot(C, dir) < 0) return false;	// new point did not pass the origin
 
 	while (true) {
 		// fourth point
 		dir = glm::normalize(glm::cross(B - A, C - A));
 		if (glm::dot(dir, A) > 0) dir = -dir;	// wrong plane normal
-		D = this->support_function(dir) - other->support_function(-dir);
+		D = this->support(dir) - other->support(-dir);
 		if (glm::dot(D, dir) < 0) return false;	// new point did not pass the origin
 		if (D == A || D == B || D == C) return false; // new point is one of previous points
 
@@ -98,6 +110,14 @@ bool ColShape::GJK(ColShape *other, std::vector<glm::vec3> *simplex) {
 		return true;
 	}
 }
+
+bool ColSmoothShape::is_colliding(ColShape *other) {
+	std::vector<glm::vec3> place_holder;
+	return ColShape::is_colliding(other, &place_holder);
+}
+
+
+// Collision Resolution
 
 size_t get_normals(
 	std::vector<glm::vec3> &vertices,
@@ -132,7 +152,7 @@ size_t get_normals(
 	return best_face;
 }
 
-glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
+glm::vec4 ColSharpShape::resolve_collision(ColSharpShape *other, std::vector<glm::vec3> &vertices) {
 	std::vector<size_t> faces = {
 		0, 1, 2,
 		0, 1, 3,
@@ -165,7 +185,7 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 			};
 		}
 
-		glm::vec3 P = this->support_function(best_norm) - other->support_function(-best_norm);
+		glm::vec3 P = this->support(best_norm) - other->support(-best_norm);
 		float P_dist = glm::dot(best_norm, P);
 
 		if (std::abs(P_dist - best_dist) > EPSILON) {
@@ -227,16 +247,20 @@ glm::vec4 ColShape::EPA(ColShape *other, std::vector<glm::vec3> &vertices) {
 	return normals[best_face];
 }
 
+glm::vec4 ColSharpShape::resolve_collision(ColSmoothShape *other) {
+	return other->resolve_collision(this);
+}
 
-// Sphere
+glm::vec4 ColSmoothShape::resolve_collision(ColSharpShape *other) {
+	std::cout << "resolving sharp-soft collision" << std::endl;
+	//TODO
+	return glm::vec4(0, 0, 0, 0);
+}
 
-CollisionSphere::CollisionSphere(float radius): radius(radius) {}
-
-glm::vec3 CollisionSphere::support_function(glm::vec3 dir) {
-	// Direction must be normalized
-
-	glm::vec3 center = matrix * glm::vec4(0, 0, 0, 1);
-	return center + dir * radius;
+glm::vec4 ColSmoothShape::resolve_collision(ColSmoothShape *other) {
+	std::cout << "resolving soft-soft collision" << std::endl;
+	// TODO
+	return glm::vec4(0, 0, 0, 0);
 }
 
 
@@ -245,7 +269,7 @@ glm::vec3 CollisionSphere::support_function(glm::vec3 dir) {
 CollisionAAB::CollisionAAB(glm::vec3 min_point, glm::vec3 max_point):
 	min_point(min_point), max_point(max_point) {}
 
-glm::vec3 CollisionAAB::support_function(glm::vec3 dir) {
+glm::vec3 CollisionAAB::support(glm::vec3 dir) {
 	// Direction must be normalized
 
 	glm::vec3 best_point;
@@ -272,12 +296,18 @@ glm::vec3 CollisionAAB::support_function(glm::vec3 dir) {
 	return best_point;
 }
 
+void CollisionAAB::get_faces(std::vector<glm::vec4> *faces) {
+	// TODO
+}
+
 
 // Cube
 
-CollisionCube::CollisionCube(float size): size(size) {};
+CollisionCube::CollisionCube(float size): size(size) {
+	assertm(size > 0, "invalid cube size");
+}
 
-glm::vec3 CollisionCube::support_function(glm::vec3 dir) {
+glm::vec3 CollisionCube::support(glm::vec3 dir) {
 	// Direction must be normalized
 
 	// std::cout << "dir global : " << dir.x << ", " << dir.y << ", " << dir.z << std::endl;
@@ -311,4 +341,39 @@ glm::vec3 CollisionCube::support_function(glm::vec3 dir) {
 	// std::cout << "point global : " << best_point.x << ", " << best_point.y << ", " << best_point.z << std::endl;
 
 	return best_point;
+}
+
+void CollisionCube::get_faces(std::vector<glm::vec4> *faces) {
+	// TODO
+}
+
+
+// Sphere
+
+CollisionSphere::CollisionSphere(float radius): radius(radius) {
+	assertm(radius > 0, "invalid sphere radius");
+}
+
+glm::vec3 CollisionSphere::support(glm::vec3 dir) {
+	// Direction must be normalized
+
+	glm::vec3 center = matrix * glm::vec4(O, 1);
+	return center + dir * radius;
+}
+
+
+// Capsule
+
+CollisionCapsule::CollisionCapsule(float radius, float height): radius(radius), height(height) {
+	assertm(radius > 0, "invalid capsule radius");
+	assertm(height >= 0, "invalide capsule height");
+}
+
+glm::vec3 CollisionCapsule::support(glm::vec3 dir) {
+	// Direction must be normalized
+
+	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
+
+	glm::vec3 center(0, 0, signum(local_dir.z) * height / 2.f);
+	return matrix * glm::vec4(center + local_dir * radius, 1);
 }

@@ -95,15 +95,11 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 
 	// Flying
 	if (noclip) {
-
-		// Up vector
-		glm::vec3 up = glm::cross( right, direction );
-
 		if (glfwGetKey( window, GLFW_KEY_SPACE ) == GLFW_PRESS){
-			position += up * delta * PLAYER_SPEED;
+			position += glm::vec3(0, 0, 1) * delta * PLAYER_SPEED;
 		}
 		if (glfwGetKey( window, GLFW_KEY_Q) == GLFW_PRESS){
-			position -= up * delta * PLAYER_SPEED;
+			position -= glm::vec3(0, 0, 1) * delta * PLAYER_SPEED;
 		}
 	}
 
@@ -115,23 +111,13 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	compute_transforms();
 }
 
-ColShape *Player::get_collider() {
+ColSmoothShape *Player::get_collider_p() {
 	return &collider;
 }
 
-bool Player::collides(ColShape *other) {
-	std::vector<glm::vec3> simplex;
-
-	if (collider.ColShape::GJK(other, &simplex)) {
-		
-		glm::vec4 result = collider.ColShape::EPA(other, simplex);
-		position -= glm::vec3(result) * result.w;
-		compute_transforms();
-
-		return true;
-	}
-
-	return false;
+void Player::nudge(glm::vec4 dir_dist) {
+	position -= glm::vec3(dir_dist) * dir_dist.w;
+	compute_transforms();
 }
 
 glm::mat4 Player::get_model_matrix() {
