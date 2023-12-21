@@ -19,7 +19,7 @@ void Player::compute_transforms() {
 	);
 
 	model = glm::inverse(glm::lookAt(position, position + direction, glm::vec3(0, 0, 1)));
-	collider.ColShape::set_transform(model);
+	collider.Shape::set_transform(model);
 
 	direction = glm::vec3(
 		std::cos(phi) * std::sin(theta),
@@ -111,7 +111,7 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	compute_transforms();
 }
 
-ColSmoothShape *Player::get_collider_p() {
+Collision::Cube *Player::get_collider_p() {
 	return &collider;
 }
 

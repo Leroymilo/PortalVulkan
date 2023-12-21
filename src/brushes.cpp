@@ -8,7 +8,7 @@ SimpleBrush::SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string t
 	min_point(min_point), max_point(max_point), tex_name(tex_name),
 	collider(min_point, max_point) {}
 
-CollisionAAB *SimpleBrush::get_collider_p() {
+Collision::AAB *SimpleBrush::get_collider_p() {
 	return &collider;
 }
 

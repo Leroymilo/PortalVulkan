@@ -11,41 +11,139 @@
 #define O glm::vec3(0, 0, 0)
 #define assertm(exp, msg) assert(((void)msg, exp))
 
+using namespace Collision;
+
 const float EPSILON = 0.001;
-
-
-// Get sign
 
 template <typename T> int signum(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
 
-// Required to make a proper std::unordered_set<Edge>
+// Setters
 
-bool Edge::operator==(const Edge &other) const {
-	return (
-		(this->a == other.a && this->b == other.b) ||
-		(this->a == other.b && this->b == other.a)
-	);
-}
-
-size_t Edge::hash::operator()(const Edge &edge) const {
-	size_t a = std::min(edge.a, edge.b), b = std::max(edge.a, edge.b);
-	return a >= b ? a * a + a + b : a + b * b;
-}
-
-
-// Any shape
-
-void ColShape::set_transform(glm::mat4 new_matrix) {
+void Shape::set_transform(glm::mat4 new_matrix) {
 	matrix = new_matrix;
 }
 
 
-// Collision detection
+// Constructors ===================================================================================
 
-bool ColShape::is_colliding(ColShape *other, std::vector<glm::vec3> *simplex) {
+PointShape::PointShape() {
+	vertices.clear();
+	vertices.emplace_back(0, 0, 0);
+}
+
+PointShape::PointShape(const std::vector<glm::vec3> &points): vertices(points) {
+	assertm(vertices.size() > 0, "No points given for Vertices based shape");
+}
+
+template <class BaseShape>
+SmoothShape<BaseShape>::SmoothShape() {
+	base_shape = BaseShape();
+	radius = 1;
+}
+
+template <class BaseShape>
+SmoothShape<BaseShape>::SmoothShape(const BaseShape base_shape, float radius):
+	base_shape(base_shape), radius(radius)
+{
+	assertm(radius > 0, "Invalid radius for SmoothShape (<= 0)");
+}
+
+AAB::AAB(glm::vec3 min_point, glm::vec3 max_point) {
+	vertices.clear();
+	
+	for (uint i = 0; i < 8; i++) {
+		glm::vec3 point;
+		for (uint d = 0; d < 3; d++) {
+			if ((i >> d) & 1) point[d] = max_point[d];
+			else point[d] = min_point[d];
+		}
+		vertices.push_back(point);
+	}
+}
+
+Cube::Cube(float size): AAB(glm::vec3(-size/2.f), glm::vec3(size/2.f)) {}
+
+Sphere::Sphere(float radius): SmoothShape<PointShape>(
+	PointShape(),
+	radius
+) {}
+
+Capsule::Capsule(float height, float radius): SmoothShape<PointShape>(
+	PointShape({
+		glm::vec3(0, 0,  height/2.f),
+		glm::vec3(0, 0, -height/2.f)
+	}),
+	radius
+) {
+	assertm(height > 0, "Invalid height for Capsule (<= 0)");
+}
+
+Cylinder::Cylinder(float height, float radius): height(height), radius(radius) {
+	shape_a = AAB(
+		glm::vec3(-radius, -radius, -height/2),
+		glm::vec3( radius,  radius,  height/2)
+	);
+	shape_b = Capsule(height, radius);
+}
+
+
+// Support functions ==============================================================================
+
+glm::vec3 PointShape::support(glm::vec3 dir) {
+	// Direction must be normalized
+
+	// O(vertices.size()), should be optimized for specific shapes when possible
+
+	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
+	glm::vec3 best_point;
+	float best_score = -FLT_MAX;
+	
+	for (const glm::vec3 &vertex : vertices) {
+		float score = glm::dot(local_dir, vertex);
+
+		if (score > best_score) {
+			best_score = score;
+			best_point = vertex;
+		}
+	}
+
+	return matrix * glm::vec4(best_point, 1);
+}
+
+template <class BaseShape>
+glm::vec3 SmoothShape<BaseShape>::support(glm::vec3 dir) {
+	// Direction must be normalized
+
+	glm::vec3 base_support = base_shape.support(dir);
+	return base_support + dir * radius;
+}
+
+glm::vec3 Cylinder::support(glm::vec3 dir) {
+	// Direction must be normalized
+
+	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
+	glm::vec2 local_dir_xy = local_dir;
+
+	if (local_dir_xy.length() > 0) {
+		local_dir_xy = glm::normalize(local_dir_xy);
+	}
+
+	glm::vec4 local_support(
+		radius * local_dir_xy,
+		height * signum(local_dir.z),
+		1
+	);
+
+	return matrix * local_support;
+}
+
+
+// Collision Detection ============================================================================
+
+bool Shape::is_colliding(Shape *other, std::vector<glm::vec3> *simplex) {
 	// GJK algorithm https://www.youtube.com/watch?v=ajv46BSqcK4
 
 	glm::vec3 A, B, C, D;
@@ -105,19 +203,28 @@ bool ColShape::is_colliding(ColShape *other, std::vector<glm::vec3> *simplex) {
 			continue;
 		}
 
-		// Origin on the right side of all planes of simplex, so in simplex
-		simplex->assign({A, B, C, D});
+		if (simplex != nullptr) {
+			// Origin on the right side of all planes of simplex, so in simplex
+			simplex->assign({A, B, C, D});
+		}
 		return true;
 	}
 }
 
-bool ColSmoothShape::is_colliding(ColShape *other) {
-	std::vector<glm::vec3> place_holder;
-	return ColShape::is_colliding(other, &place_holder);
+
+// Collision Resolution ===========================================================================
+
+bool Edge::operator==(const Edge &other) const {
+	return (
+		(this->a == other.a && this->b == other.b) ||
+		(this->a == other.b && this->b == other.a)
+	);
 }
 
-
-// Collision Resolution
+size_t Edge::hash::operator()(const Edge &edge) const {
+	size_t a = std::min(edge.a, edge.b), b = std::max(edge.a, edge.b);
+	return a >= b ? a * a + a + b : a + b * b;
+}
 
 size_t get_normals(
 	std::vector<glm::vec3> &vertices,
@@ -152,7 +259,15 @@ size_t get_normals(
 	return best_face;
 }
 
-glm::vec4 ColSharpShape::resolve_collision(ColSharpShape *other, std::vector<glm::vec3> &vertices) {
+glm::vec4 Collision::resolve(PointShape *shape_a, PointShape *shape_b) {
+	// EPA algorithm
+
+	std::vector<glm::vec3> vertices;
+
+	if (!shape_a->is_colliding(shape_b, &vertices)) {
+		return glm::vec4(1, 0, 0, 0);	// no collision -> distance is 0
+	}
+
 	std::vector<size_t> faces = {
 		0, 1, 2,
 		0, 1, 3,
@@ -185,7 +300,7 @@ glm::vec4 ColSharpShape::resolve_collision(ColSharpShape *other, std::vector<glm
 			};
 		}
 
-		glm::vec3 P = this->support(best_norm) - other->support(-best_norm);
+		glm::vec3 P = shape_a->support(best_norm) - shape_b->support(-best_norm);
 		float P_dist = glm::dot(best_norm, P);
 
 		if (std::abs(P_dist - best_dist) > EPSILON) {
@@ -247,133 +362,7 @@ glm::vec4 ColSharpShape::resolve_collision(ColSharpShape *other, std::vector<glm
 	return normals[best_face];
 }
 
-glm::vec4 ColSharpShape::resolve_collision(ColSmoothShape *other) {
-	return other->resolve_collision(this);
-}
-
-glm::vec4 ColSmoothShape::resolve_collision(ColSharpShape *other) {
-	std::cout << "resolving sharp-soft collision" << std::endl;
-	//TODO
-	return glm::vec4(0, 0, 0, 0);
-}
-
-glm::vec4 ColSmoothShape::resolve_collision(ColSmoothShape *other) {
-	std::cout << "resolving soft-soft collision" << std::endl;
-	// TODO
-	return glm::vec4(0, 0, 0, 0);
-}
-
-
-// Axis Aligned Box
-
-CollisionAAB::CollisionAAB(glm::vec3 min_point, glm::vec3 max_point):
-	min_point(min_point), max_point(max_point) {}
-
-glm::vec3 CollisionAAB::support(glm::vec3 dir) {
-	// Direction must be normalized
-
-	glm::vec3 best_point;
-	float best_score = -FLT_MAX;
-
-	for (uint i = 0; i < 8; i++) {
-		glm::vec3 point;
-		for (uint d = 0; d < 3; d++) {
-			if ((i >> d) & 1) {
-				point[d] = max_point[d];
-			}
-			else {
-				point[d] = min_point[d];
-			}
-		}
-
-		float score = dot(dir, point);
-		if (score > best_score) {
-			best_score = score;
-			best_point = point;
-		}
-	}
-
-	return best_point;
-}
-
-void CollisionAAB::get_faces(std::vector<glm::vec4> *faces) {
-	// TODO
-}
-
-
-// Cube
-
-CollisionCube::CollisionCube(float size): size(size) {
-	assertm(size > 0, "invalid cube size");
-}
-
-glm::vec3 CollisionCube::support(glm::vec3 dir) {
-	// Direction must be normalized
-
-	// std::cout << "dir global : " << dir.x << ", " << dir.y << ", " << dir.z << std::endl;
-
-	dir = glm::inverse(matrix) * glm::vec4(dir, 0);
-
-	// std::cout << "dir local : " << dir.x << ", " << dir.y << ", " << dir.z << std::endl;
-
-	glm::vec3 best_point;
-	float best_score = -FLT_MAX;
-
-	for (uint i = 0; i < 8; i++) {
-		glm::vec3 point(size/2);
-		for (uint d = 0; d < 3; d++) {
-			if (!((i >> d) & 1)) {
-				point[d] *= -1;
-			}
-		}
-
-		float score = dot(dir, point);
-		if (score > best_score) {
-			best_score = score;
-			best_point = point;
-		}
-	}
-
-	// std::cout << "point local : " << best_point.x << ", " << best_point.y << ", " << best_point.z << std::endl;
-	
-	best_point = matrix * glm::vec4(best_point, 1);
-
-	// std::cout << "point global : " << best_point.x << ", " << best_point.y << ", " << best_point.z << std::endl;
-
-	return best_point;
-}
-
-void CollisionCube::get_faces(std::vector<glm::vec4> *faces) {
-	// TODO
-}
-
-
-// Sphere
-
-CollisionSphere::CollisionSphere(float radius): radius(radius) {
-	assertm(radius > 0, "invalid sphere radius");
-}
-
-glm::vec3 CollisionSphere::support(glm::vec3 dir) {
-	// Direction must be normalized
-
-	glm::vec3 center = matrix * glm::vec4(O, 1);
-	return center + dir * radius;
-}
-
-
-// Capsule
-
-CollisionCapsule::CollisionCapsule(float radius, float height): radius(radius), height(height) {
-	assertm(radius > 0, "invalid capsule radius");
-	assertm(height >= 0, "invalide capsule height");
-}
-
-glm::vec3 CollisionCapsule::support(glm::vec3 dir) {
-	// Direction must be normalized
-
-	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
-
-	glm::vec3 center(0, 0, signum(local_dir.z) * height / 2.f);
-	return matrix * glm::vec4(center + local_dir * radius, 1);
+glm::vec4 Collision::resolve(SmoothShape<PointShape> *shape_a, PointShape *shape_b) {
+	std::cout << "smooth <-> polyhedra collision TODO" << std::endl;
+	return glm::vec4(1, 0, 0, 0);
 }

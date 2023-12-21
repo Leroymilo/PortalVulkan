@@ -14,7 +14,7 @@ class SimpleBrush {
 		glm::vec3 min_point = glm::vec3();
 		glm::vec3 max_point = glm::vec3();
 
-		CollisionAAB collider;
+		Collision::AAB collider;
 
 		uint32_t vertex_offset;
 		uint32_t first_index;
@@ -26,7 +26,7 @@ class SimpleBrush {
 
 		SimpleBrush(glm::vec3 min_point, glm::vec3 max_point, std::string tex_name);
 
-		CollisionAAB *get_collider_p();
+		Collision::AAB *get_collider_p();
 
 		bool generate_buffers(
 			std::vector<Vertex> *vertices,

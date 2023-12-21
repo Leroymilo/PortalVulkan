@@ -81,14 +81,14 @@ void World::process_physics(GLFWwindow *window) {
 
 	player.process_physics(window, deltaTime);
 
-	ColSmoothShape *player_collider = player.get_collider_p();
+	Collision::Cube *player_collider = player.get_collider_p();
 
 	for (SimpleBrush &brush : simple_brushes) {
 
-		CollisionAAB *brush_collider = brush.get_collider_p();
+		Collision::AAB *brush_collider = brush.get_collider_p();
 
-		if (player_collider->is_colliding(brush_collider)) {
-			glm::vec4 dir_dist = player_collider->resolve_collision(brush_collider);
+		if (player_collider->is_colliding(brush_collider, nullptr)) {
+			glm::vec4 dir_dist = Collision::resolve(player_collider, brush_collider);
 			player.nudge(dir_dist);
 		}
 	}
