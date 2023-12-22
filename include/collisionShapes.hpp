@@ -4,22 +4,6 @@
 #include "glm/glm.hpp"
 
 
-// Utils for collision resolution
-
-struct Edge {
-	size_t a;
-	size_t b;
-
-	bool operator==(const Edge &other) const;
-
-	struct hash {
-		size_t operator()(const Edge &edge) const;
-	};
-};
-
-size_t get_normals(std::vector<glm::vec3> &vertices, std::vector<size_t> &faces, std::vector<glm::vec4> &normals);
-
-
 // Classes
 
 namespace Collision {
@@ -27,11 +11,12 @@ namespace Collision {
 	class Shape {
 		protected:
 			glm::mat4 matrix = glm::mat4(1.0f);
-			virtual glm::vec3 support(glm::vec3 dir) = 0;
 		
 		public:
 			void set_transform(glm::mat4 new_matrix);
-			bool is_colliding(Shape *other, std::vector<glm::vec3> *simplex);
+			bool is_colliding(Shape *other);
+
+			virtual glm::vec3 support(const glm::vec3 &dir) = 0;
 	};
 
 	class PointShape: public Shape {
@@ -44,7 +29,7 @@ namespace Collision {
 			PointShape();	// Single point in (0, 0, 0)
 			PointShape(const std::vector<glm::vec3> &points);
 
-			glm::vec3 support(glm::vec3 dir) override;
+			glm::vec3 support(const glm::vec3 &dir) override;
 	};
 
 	template<class BaseShape>
@@ -61,7 +46,9 @@ namespace Collision {
 			SmoothShape();	// Circle of radius 1 centered in (0, 0, 0)
 			SmoothShape(const BaseShape base_shape, float radius);
 
-			glm::vec3 support(glm::vec3 dir) override;
+			BaseShape *get_base_shape();
+			float get_radius();
+			glm::vec3 support(const glm::vec3 &dir) override;
 	};
 
 	template<class ShapeA, class ShapeB>
@@ -74,7 +61,9 @@ namespace Collision {
 		protected:
 			ShapeA shape_a;
 			ShapeB shape_b;
-			virtual glm::vec3 support(glm::vec3 dir) = 0;
+		
+		public:
+			virtual glm::vec3 support(const glm::vec3 &dir) = 0;
 			// The support function must be defined for every InterShape sub-class,
 			// it cannot be expressed from the support functions of the shapes it is an intersection of (afaIk)
 	};
@@ -83,7 +72,7 @@ namespace Collision {
 
 	class AAB: public PointShape {
 		public:
-			AAB(glm::vec3 min_point, glm::vec3 max_point);
+			AAB(const glm::vec3 &min_point, const glm::vec3 &max_point);
 	};
 
 	class Cube: public AAB {
@@ -108,11 +97,10 @@ namespace Collision {
 		public:
 			Cylinder(float height, float radius);
 
-			glm::vec3 support(glm::vec3 dir) override;
+			glm::vec3 support(const glm::vec3 &dir) override;
 			// required for InterShape
 	};
-
-
+	
 	// Collision resolution :
 
 	glm::vec4 resolve(PointShape *shape_a, PointShape *shape_b);

@@ -20,13 +20,6 @@ template <typename T> int signum(T val) {
 }
 
 
-// Setters
-
-void Shape::set_transform(glm::mat4 new_matrix) {
-	matrix = new_matrix;
-}
-
-
 // Constructors ===================================================================================
 
 PointShape::PointShape() {
@@ -51,7 +44,7 @@ SmoothShape<BaseShape>::SmoothShape(const BaseShape base_shape, float radius):
 	assertm(radius > 0, "Invalid radius for SmoothShape (<= 0)");
 }
 
-AAB::AAB(glm::vec3 min_point, glm::vec3 max_point) {
+AAB::AAB(const glm::vec3 &min_point, const glm::vec3 &max_point) {
 	vertices.clear();
 	
 	for (uint i = 0; i < 8; i++) {
@@ -90,9 +83,26 @@ Cylinder::Cylinder(float height, float radius): height(height), radius(radius) {
 }
 
 
+// Setters and Getters
+
+void Shape::set_transform(glm::mat4 new_matrix) {
+	matrix = new_matrix;
+}
+
+template<class BaseShape>
+BaseShape *SmoothShape<BaseShape>::get_base_shape() {
+	return &base_shape;
+}
+
+template<class BaseShape>
+float SmoothShape<BaseShape>::get_radius() {
+	return radius;
+}
+
+
 // Support functions ==============================================================================
 
-glm::vec3 PointShape::support(glm::vec3 dir) {
+glm::vec3 PointShape::support(const glm::vec3 &dir) {
 	// Direction must be normalized
 
 	// O(vertices.size()), should be optimized for specific shapes when possible
@@ -114,14 +124,14 @@ glm::vec3 PointShape::support(glm::vec3 dir) {
 }
 
 template <class BaseShape>
-glm::vec3 SmoothShape<BaseShape>::support(glm::vec3 dir) {
+glm::vec3 SmoothShape<BaseShape>::support(const glm::vec3 &dir) {
 	// Direction must be normalized
 
 	glm::vec3 base_support = base_shape.support(dir);
 	return base_support + dir * radius;
 }
 
-glm::vec3 Cylinder::support(glm::vec3 dir) {
+glm::vec3 Cylinder::support(const glm::vec3 &dir) {
 	// Direction must be normalized
 
 	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
@@ -141,16 +151,171 @@ glm::vec3 Cylinder::support(glm::vec3 dir) {
 }
 
 
-// Collision Detection ============================================================================
+// Collision Detection ===========================================================================
 
-bool Shape::is_colliding(Shape *other, std::vector<glm::vec3> *simplex) {
-	// GJK algorithm https://www.youtube.com/watch?v=ajv46BSqcK4
+glm::vec3 closest_on_line(std::vector<glm::vec3> *simplex) {
+	// vertices
+	glm::vec3 &A = (*simplex)[0];
+	glm::vec3 &B = (*simplex)[1];
+	glm::vec3 AB = B - A;
+	if (glm::dot(AB, A) >= 0) {
+		simplex->assign({A});
+		return A;
+	}
+	if (glm::dot(AB, B) <= 0) {
+		simplex->assign({B});
+		return B;
+	}
+
+	// edge
+	glm::vec3 d = glm::normalize(AB);
+	return A - glm::dot(d, A) * d;
+}
+
+glm::vec3 closest_on_triangle(std::vector<glm::vec3> *simplex) {
+	// vertices
+	for (int i = 0; i < 3; i++) {
+		glm::vec3 &A = (*simplex)[i];
+		
+		if (
+			glm::dot(A, (*simplex)[(i+1)%3] - A) >= 0 &&
+			glm::dot(A, (*simplex)[(i+2)%3] - A) >= 0
+		) {
+			simplex->assign({A});
+			return A;
+		}
+	}
+
+	glm::vec3 normal = glm::cross(
+		(*simplex)[1] - (*simplex)[0],
+		(*simplex)[2] - (*simplex)[0]
+	);
+
+	// edges
+	for (int i = 0; i < 3; i++) {
+		glm::vec3 &A = (*simplex)[i];
+		glm::vec3 &B = (*simplex)[(i+1)%3];
+
+		if (glm::dot(glm::cross(normal, A - B), B) <= 0) {
+			simplex->assign({A, B});
+			return closest_on_line(simplex);
+		}
+	}
+
+	// face
+	return glm::dot(normal, (*simplex)[0]) * normal;
+}
+
+glm::vec3 closest(std::vector<glm::vec3> *simplex) {
+	// finds point of simplex closest to origin
+	// also reduces simplex to contain this point
+
+	switch(simplex->size()) {
+		case 1:
+			return simplex->back();
+		
+		case 2:
+			return closest_on_line(simplex);
+
+		case 3:
+			return closest_on_triangle(simplex);
+	}
+
+	// vertices
+	for (int i = 0; i < 4; i++) {
+		glm::vec3 &A = (*simplex)[i];
+
+		if (
+			glm::dot(A, (*simplex)[(i+1)%4] - A) >= 0 &&
+			glm::dot(A, (*simplex)[(i+2)%4] - A) >= 0 &&
+			glm::dot(A, (*simplex)[(i+3)%4] - A) >= 0
+		) {
+			simplex->assign({A});
+			return A;
+		}
+	}
+
+	// edges
+	for (int i = 0; i < 4; i++) {
+		glm::vec3 &A = (*simplex)[i];
+		glm::vec3 &B = (*simplex)[(i+1)%4];
+		glm::vec3 AC = (*simplex)[(i+2)%4] - A;
+		glm::vec3 AD = (*simplex)[(i+3)%4] - A;
+
+		glm::vec3 ABC = glm::cross(B - A, AC);
+		glm::vec3 ABD = glm::cross(B - A, AD);
+
+		if (
+			glm::dot(ABC, A) * glm::dot(ABC, AD) >= 0 &&
+			glm::dot(ABD, A) * glm::dot(ABD, AC) >= 0
+		) {
+			simplex->assign({A, B});
+			return closest_on_line(simplex);
+		}
+	}
+
+	// faces
+	for (int i = 0; i < 4; i++) {
+		glm::vec3 &A = (*simplex)[i];
+		glm::vec3 &B = (*simplex)[(i+1)%4];
+		glm::vec3 &C = (*simplex)[(i+2)%4];
+		glm::vec3 AD = (*simplex)[(i+3)%4] - A;
+
+		glm::vec3 ABC = glm::cross(B - A, C - A);
+
+		if (glm::dot(ABC, A) * glm::dot(ABC, AD) >= 0) {
+			simplex->assign({A, B, C});
+			return closest_on_triangle(simplex);
+		}
+	}
+
+	// in tetrahedron
+	return O;
+}
+
+glm::vec3 support(Shape *shape_a, Shape *shape_b, const glm::vec3 &dir) {
+	return shape_a->support(dir) - shape_b->support(-dir);
+}
+
+bool GJK(Shape *shape_a, Shape *shape_b, glm::vec4 *dir_dist, std::vector<glm::vec3> *simplex) {
+	// Complete GJK algorithm https://youtu.be/DGVZYdlw_uo?si=ME8J8EsuHkM2NdFP
+	// returns ( shape_a ∩ shape_b != ⌀ ), i.e. : true if shape_a and shape_b intersects
+
+	simplex->clear();
+	glm::vec3 v = support(shape_a, shape_b, glm::vec3(1, 0, 0));
+
+	while (true) {
+		if (v == O) {
+			// cannot normalize because v on origin
+			// so point of simplex closest to origin is origin,
+			// i.e. : origin in simplex
+			*dir_dist = glm::vec4(1, 0, 0, 0);
+			return true;
+		}
+		glm::vec3 dir = -glm::normalize(v);
+
+		glm::vec3 w = support(shape_a, shape_b, dir);
+
+		if (glm::dot(v, dir) >= glm::dot(w, dir)) {
+			// w is no more extreme than v in direction
+			*dir_dist = glm::vec4(dir, v.length());
+			return false;
+		}
+
+		simplex->push_back(w);
+		v = closest(simplex);
+	}
+}
+
+bool GJK_fast(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> *simplex) {
+	// GJK algorithm with shortcuts https://www.youtube.com/watch?v=ajv46BSqcK4
+	// returns ( shape_a ∩ shape_b != ⌀ ), i.e. : true if shape_a and shape_b intersects
 
 	glm::vec3 A, B, C, D;
 	glm::vec3 dir = glm::vec3(1, 0, 0);
 
 	// first point
-	A = this->support(dir) - other->support(-dir);
+	A = support(shape_a, shape_b, dir);
 
 	// second point
 	if (A == O) {
@@ -160,7 +325,7 @@ bool Shape::is_colliding(Shape *other, std::vector<glm::vec3> *simplex) {
 	else {
 		dir = glm::normalize(O - A);
 	}
-	B = this->support(dir) - other->support(-dir);
+	B = support(shape_a, shape_b, dir);
 	if (glm::dot(B, dir) < 0) return false;	// new point did not pass the origin
 
 	// third point
@@ -172,14 +337,14 @@ bool Shape::is_colliding(Shape *other, std::vector<glm::vec3> *simplex) {
 	}
 	dir = glm::normalize(glm::cross(ortho, AB));
 	
-	C = this->support(dir) - other->support(-dir);
+	C = support(shape_a, shape_b, dir);
 	if (glm::dot(C, dir) < 0) return false;	// new point did not pass the origin
 
 	while (true) {
 		// fourth point
 		dir = glm::normalize(glm::cross(B - A, C - A));
 		if (glm::dot(dir, A) > 0) dir = -dir;	// wrong plane normal
-		D = this->support(dir) - other->support(-dir);
+		D = support(shape_a, shape_b, dir);
 		if (glm::dot(D, dir) < 0) return false;	// new point did not pass the origin
 		if (D == A || D == B || D == C) return false; // new point is one of previous points
 
@@ -207,24 +372,37 @@ bool Shape::is_colliding(Shape *other, std::vector<glm::vec3> *simplex) {
 			// Origin on the right side of all planes of simplex, so in simplex
 			simplex->assign({A, B, C, D});
 		}
+
 		return true;
 	}
+}
+
+bool Shape::is_colliding(Shape *other) {
+	return GJK_fast(this, other, nullptr);
 }
 
 
 // Collision Resolution ===========================================================================
 
-bool Edge::operator==(const Edge &other) const {
-	return (
-		(this->a == other.a && this->b == other.b) ||
-		(this->a == other.b && this->b == other.a)
-	);
-}
+// Edge struct to simplify search of unique edges
+struct Edge {
+	size_t a;
+	size_t b;
 
-size_t Edge::hash::operator()(const Edge &edge) const {
-	size_t a = std::min(edge.a, edge.b), b = std::max(edge.a, edge.b);
-	return a >= b ? a * a + a + b : a + b * b;
-}
+	bool operator==(const Edge &other) const {
+		return (
+			(this->a == other.a && this->b == other.b) ||
+			(this->a == other.b && this->b == other.a)
+		);
+	}
+
+	struct hash {
+		size_t operator()(const Edge &edge) const {
+			size_t a = std::min(edge.a, edge.b), b = std::max(edge.a, edge.b);
+			return a + b * b;
+		}
+	};
+};
 
 size_t get_normals(
 	std::vector<glm::vec3> &vertices,
@@ -236,9 +414,9 @@ size_t get_normals(
 
 	for (int i = normals.size(); i < faces.size() / 3; i++) {
 		size_t f = 3 * i;
-		glm::vec3 A = vertices[faces[f]];
-		glm::vec3 B = vertices[faces[f+1]];
-		glm::vec3 C = vertices[faces[f+2]];
+		glm::vec3 &A = vertices[faces[f]];
+		glm::vec3 &B = vertices[faces[f+1]];
+		glm::vec3 &C = vertices[faces[f+2]];
 
 		glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
 		float dist = glm::dot(A, normal);
@@ -259,15 +437,7 @@ size_t get_normals(
 	return best_face;
 }
 
-glm::vec4 Collision::resolve(PointShape *shape_a, PointShape *shape_b) {
-	// EPA algorithm
-
-	std::vector<glm::vec3> vertices;
-
-	if (!shape_a->is_colliding(shape_b, &vertices)) {
-		return glm::vec4(1, 0, 0, 0);	// no collision -> distance is 0
-	}
-
+glm::vec4 EPA(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> &vertices) {
 	std::vector<size_t> faces = {
 		0, 1, 2,
 		0, 1, 3,
@@ -285,22 +455,21 @@ glm::vec4 Collision::resolve(PointShape *shape_a, PointShape *shape_b) {
 
 		// special case : origin on closest face
 		if (best_dist == 0) {
-			glm::vec3 dir = normals[best_face];
-			glm::vec3 A = vertices[faces[3 * best_face]];
+			glm::vec3 &A = vertices[faces[3 * best_face]];
 			glm::vec3 B;
 			for (size_t f = 0; f < faces.size(); f++) {
 				B = vertices[faces[f]];
 				if (A == B) continue;
-				if (glm::dot(dir, glm::normalize(B - A)) != 0) break;
+				if (glm::dot(best_norm, glm::normalize(B - A)) != 0) break;
 			}
 			// B is any vertex not on the face
-			if (glm::dot(dir, B - A) > 0) {
-				normals[best_face] = glm::vec4(-dir, 0);
-				best_norm = -dir;
+			if (glm::dot(best_norm, B - A) > 0) {
+				best_norm *= -1;
+				normals[best_face] = glm::vec4(best_norm, 0);
 			};
 		}
 
-		glm::vec3 P = shape_a->support(best_norm) - shape_b->support(-best_norm);
+		glm::vec3 P = support(shape_a, shape_b, best_norm);
 		float P_dist = glm::dot(best_norm, P);
 
 		if (std::abs(P_dist - best_dist) > EPSILON) {
@@ -362,7 +531,35 @@ glm::vec4 Collision::resolve(PointShape *shape_a, PointShape *shape_b) {
 	return normals[best_face];
 }
 
+glm::vec4 Collision::resolve(PointShape *shape_a, PointShape *shape_b) {
+	std::vector<glm::vec3> vertices;
+
+	if (!GJK_fast(shape_a, shape_b, &vertices)) {
+		return glm::vec4(1, 0, 0, 0);	// no collision -> distance is 0
+	}
+
+	return EPA(shape_a, shape_b, vertices);
+}
+
 glm::vec4 Collision::resolve(SmoothShape<PointShape> *shape_a, PointShape *shape_b) {
-	std::cout << "smooth <-> polyhedra collision TODO" << std::endl;
-	return glm::vec4(1, 0, 0, 0);
+	std::vector<glm::vec3> vertices;
+	glm::vec4 dir_dist;
+
+	PointShape *base_shape = shape_a->get_base_shape();
+
+	if (GJK(base_shape, shape_b, &dir_dist, &vertices)) {
+		// base shape collides with shape b
+		// compute dir_dist for base_shape
+
+		if(vertices.size() < 4) {
+			// edge case, must ensure vertices.size() == 4 for EPA
+			GJK_fast(base_shape, shape_b, &vertices);
+		}
+
+		dir_dist = EPA(base_shape, shape_b, vertices);
+	}
+
+	// add radius to dir_dist to apply smoothness of shape
+	dir_dist.w += shape_a->get_radius();
+	return dir_dist;
 }

@@ -10,7 +10,7 @@
 
 class Player {
 	private:
-		Collision::Cube collider = Collision::Cube(0.2);
+		Collision::Sphere collider = Collision::Sphere(0.1);
 		bool noclip = true;
 
 		glm::vec3 position = glm::vec3(0, 0, 1.8);
@@ -24,7 +24,7 @@ class Player {
 
 	public:
 		void process_physics(GLFWwindow *window, float delta);
-		Collision::Cube *get_collider_p();
+		Collision::Sphere *get_collider_p();
 		void nudge(glm::vec4 dir_dist);
 		glm::mat4 get_model_matrix();
 		glm::mat4 get_view_matrix();

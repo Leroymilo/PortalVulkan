@@ -111,7 +111,7 @@ void Player::process_physics(GLFWwindow *window, float delta) {
 	compute_transforms();
 }
 
-Collision::Cube *Player::get_collider_p() {
+Collision::Sphere *Player::get_collider_p() {
 	return &collider;
 }
 
