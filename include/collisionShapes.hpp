@@ -29,6 +29,7 @@ namespace Collision {
 			PointShape();	// Single point in (0, 0, 0)
 			PointShape(const std::vector<glm::vec3> &points);
 
+			void print_points();
 			glm::vec3 support(const glm::vec3 &dir) override;
 	};
 
@@ -46,6 +47,7 @@ namespace Collision {
 			SmoothShape();	// Circle of radius 1 centered in (0, 0, 0)
 			SmoothShape(const BaseShape base_shape, float radius);
 
+			void set_base_transform(glm::mat4 new_matrix);
 			BaseShape *get_base_shape();
 			float get_radius();
 			glm::vec3 support(const glm::vec3 &dir) override;

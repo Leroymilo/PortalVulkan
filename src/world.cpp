@@ -80,6 +80,7 @@ void World::process_physics(GLFWwindow *window) {
 	float deltaTime = float(currentTime - lastTime);
 
 	player.process_physics(window, deltaTime);
+	
 
 	Collision::Sphere *player_collider = player.get_collider_p();
 

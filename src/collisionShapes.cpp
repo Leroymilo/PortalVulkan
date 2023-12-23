@@ -89,6 +89,18 @@ void Shape::set_transform(glm::mat4 new_matrix) {
 	matrix = new_matrix;
 }
 
+void PointShape::print_points() {
+	for (glm::vec3 p : vertices) {
+		p = matrix * glm::vec4(p, 1);
+		std::cout << "\t" << p.x << ", " << p.y << ", " << p.z << std::endl;
+	}
+}
+
+template<>
+void SmoothShape<PointShape>::set_base_transform(glm::mat4 new_matrix) {
+	base_shape.set_transform(new_matrix);
+}
+
 template<class BaseShape>
 BaseShape *SmoothShape<BaseShape>::get_base_shape() {
 	return &base_shape;
@@ -186,10 +198,10 @@ glm::vec3 closest_on_triangle(std::vector<glm::vec3> *simplex) {
 		}
 	}
 
-	glm::vec3 normal = glm::cross(
+	glm::vec3 normal = glm::normalize(glm::cross(
 		(*simplex)[1] - (*simplex)[0],
 		(*simplex)[2] - (*simplex)[0]
-	);
+	));
 
 	// edges
 	for (int i = 0; i < 3; i++) {
@@ -285,7 +297,7 @@ bool GJK(Shape *shape_a, Shape *shape_b, glm::vec4 *dir_dist, std::vector<glm::v
 	glm::vec3 v = support(shape_a, shape_b, glm::vec3(1, 0, 0));
 
 	while (true) {
-		if (v == O) {
+		if (glm::length(v) <= EPSILON) {
 			// cannot normalize because v on origin
 			// so point of simplex closest to origin is origin,
 			// i.e. : origin in simplex
@@ -295,10 +307,9 @@ bool GJK(Shape *shape_a, Shape *shape_b, glm::vec4 *dir_dist, std::vector<glm::v
 		glm::vec3 dir = -glm::normalize(v);
 
 		glm::vec3 w = support(shape_a, shape_b, dir);
-
-		if (glm::dot(v, dir) >= glm::dot(w, dir)) {
+		if (glm::dot(v, dir) + EPSILON >= glm::dot(w, dir)) {
 			// w is no more extreme than v in direction
-			*dir_dist = glm::vec4(dir, v.length());
+			*dir_dist = glm::vec4(dir, glm::length(v) + EPSILON);
 			return false;
 		}
 
@@ -528,6 +539,7 @@ glm::vec4 EPA(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> &vertices) 
 		}
 	}
 
+	normals[best_face].w += EPSILON;
 	return normals[best_face];
 }
 
@@ -545,12 +557,16 @@ glm::vec4 Collision::resolve(SmoothShape<PointShape> *shape_a, PointShape *shape
 	std::vector<glm::vec3> vertices;
 	glm::vec4 dir_dist;
 
-	PointShape *base_shape = shape_a->get_base_shape();
+	if (!GJK_fast(shape_a, shape_b, nullptr)) {
+		return glm::vec4(1, 0, 0, 0);	// no collision -> distance is 0
+	}
 
-	if (GJK(base_shape, shape_b, &dir_dist, &vertices)) {
+	PointShape *base_shape = shape_a->get_base_shape();
+	bool base_collides = GJK(base_shape, shape_b, &dir_dist, &vertices);
+	if (base_collides) {
 		// base shape collides with shape b
 		// compute dir_dist for base_shape
-
+		
 		if(vertices.size() < 4) {
 			// edge case, must ensure vertices.size() == 4 for EPA
 			GJK_fast(base_shape, shape_b, &vertices);
@@ -560,6 +576,6 @@ glm::vec4 Collision::resolve(SmoothShape<PointShape> *shape_a, PointShape *shape
 	}
 
 	// add radius to dir_dist to apply smoothness of shape
-	dir_dist.w += shape_a->get_radius();
+	dir_dist.w = shape_a->get_radius() - dir_dist.w;
 	return dir_dist;
 }

@@ -19,7 +19,7 @@ void Player::compute_transforms() {
 	);
 
 	model = glm::inverse(glm::lookAt(position, position + direction, glm::vec3(0, 0, 1)));
-	collider.Shape::set_transform(model);
+	collider.set_base_transform(model);
 
 	direction = glm::vec3(
 		std::cos(phi) * std::sin(theta),
