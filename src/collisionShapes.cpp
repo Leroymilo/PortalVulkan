@@ -352,28 +352,34 @@ bool GJK_fast(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> *simplex) {
 	if (glm::dot(C, dir) < 0) return false;	// new point did not pass the origin
 
 	while (true) {
+		std::cout << "simplex :" << std::endl;
+		std::cout << "\t" << A.x << ", " << A.y << ", " << A.z << std::endl;
+		std::cout << "\t" << B.x << ", " << B.y << ", " << B.z << std::endl;
+		std::cout << "\t" << C.x << ", " << C.y << ", " << C.z << std::endl;
+
 		// fourth point
 		dir = glm::normalize(glm::cross(B - A, C - A));
 		if (glm::dot(dir, A) > 0) dir = -dir;	// wrong plane normal
 		D = support(shape_a, shape_b, dir);
+		std::cout << "\t" << D.x << ", " << D.y << ", " << D.z << std::endl;
 		if (glm::dot(D, dir) < 0) return false;	// new point did not pass the origin
 		if (D == A || D == B || D == C) return false; // new point is one of previous points
 
 		// Check if O in simplex ABCD
 		dir = glm::cross(A - D, B - D);
-		if (glm::dot(dir, C) * glm::dot(dir, D) > 0) {
+		if (glm::dot(dir, C - D) * glm::dot(dir, D) > 0) {
 			// Origin on wrong side of plane ABD
 			std::swap(C, D);
 			continue;
 		}
 		dir = glm::cross(B - D, C - D);
-		if (glm::dot(dir, A) * glm::dot(dir, D) > 0) {
+		if (glm::dot(dir, A - D) * glm::dot(dir, D) > 0) {
 			// Origin on wrong side of plane BCD
 			std::swap(A, D);
 			continue;
 		}
 		dir = glm::cross(C - D, A - D);
-		if (glm::dot(dir, B) * glm::dot(dir, D) > 0) {
+		if (glm::dot(dir, B - D) * glm::dot(dir, D) > 0) {
 			// Origin on wrong side of plane CAD
 			std::swap(B, D);
 			continue;
