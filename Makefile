@@ -1,4 +1,4 @@
-CFLAGS = -std=c++17 -g #-O2
+CFLAGS = -std=c++17 -O2
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 OBJ_DIR := ./objects
