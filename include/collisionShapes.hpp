@@ -72,12 +72,20 @@ namespace Collision {
 
 	// Classes to help define common shapes
 
-	class AAB: public PointShape {
+	class AABox: public PointShape {
 		public:
-			AAB(const glm::vec3 &min_point, const glm::vec3 &max_point);
+			AABox(const glm::vec3 &min_point, const glm::vec3 &max_point);
 	};
 
-	class Cube: public AAB {
+	class AAPrism: public PointShape {
+		public:
+			AAPrism(
+				const glm::vec3 &min_point, const glm::vec3 &max_point,
+				const std::vector<glm::vec3> &base
+			);
+	};
+
+	class Cube: public AABox {
 		public:
 			Cube(float size);
 	};

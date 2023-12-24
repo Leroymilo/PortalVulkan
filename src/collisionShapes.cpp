@@ -44,7 +44,7 @@ SmoothShape<BaseShape>::SmoothShape(const BaseShape base_shape, float radius):
 	assertm(radius > 0, "Invalid radius for SmoothShape (<= 0)");
 }
 
-AAB::AAB(const glm::vec3 &min_point, const glm::vec3 &max_point) {
+AABox::AABox(const glm::vec3 &min_point, const glm::vec3 &max_point) {
 	vertices.clear();
 	
 	for (uint i = 0; i < 8; i++) {
@@ -57,7 +57,21 @@ AAB::AAB(const glm::vec3 &min_point, const glm::vec3 &max_point) {
 	}
 }
 
-Cube::Cube(float size): AAB(glm::vec3(-size/2.f), glm::vec3(size/2.f)) {}
+AAPrism::AAPrism(
+	const glm::vec3 &min_point, const glm::vec3 &max_point,
+	const std::vector<glm::vec3> &base
+) {
+	for (const glm::vec3 &point: base) {
+		vertices.insert(
+			vertices.end(), {
+				min_point + point,
+				max_point + point
+			}
+		);
+	}
+}
+
+Cube::Cube(float size): AABox(glm::vec3(-size/2.f), glm::vec3(size/2.f)) {}
 
 Sphere::Sphere(float radius): SmoothShape<PointShape>(
 	PointShape(),
@@ -75,7 +89,7 @@ Capsule::Capsule(float height, float radius): SmoothShape<PointShape>(
 }
 
 Cylinder::Cylinder(float height, float radius): height(height), radius(radius) {
-	shape_a = AAB(
+	shape_a = AABox(
 		glm::vec3(-radius, -radius, -height/2),
 		glm::vec3( radius,  radius,  height/2)
 	);
@@ -352,11 +366,6 @@ bool GJK_fast(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> *simplex) {
 	if (glm::dot(C, dir) < 0) return false;	// new point did not pass the origin
 
 	while (true) {
-		std::cout << "simplex :" << std::endl;
-		std::cout << "\t" << A.x << ", " << A.y << ", " << A.z << std::endl;
-		std::cout << "\t" << B.x << ", " << B.y << ", " << B.z << std::endl;
-		std::cout << "\t" << C.x << ", " << C.y << ", " << C.z << std::endl;
-
 		// fourth point
 		dir = glm::normalize(glm::cross(B - A, C - A));
 		if (glm::dot(dir, A) > 0) dir = -dir;	// wrong plane normal
