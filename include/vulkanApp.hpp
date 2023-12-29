@@ -28,9 +28,13 @@ struct SwapChainSupportDetails {
 };
 
 struct UniformBufferObject {
-    glm::mat4 model;
+    // glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
+};
+
+struct UboDataDynamic {
+	glm::mat4 *model = nullptr;
 };
 
 static std::vector<char> readFile(const std::string& filename);
@@ -110,6 +114,12 @@ class VulkanApp {
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
 		std::vector<void*> uniformBuffersMapped;
+
+		uint32_t dynamicAlignment;
+		UboDataDynamic uboDataDynamic;
+		VkBuffer uboDynamicBuffer;
+		VkDeviceMemory uboDynamicBufferMemory;
+		void *uboDynamicMapped;
 
 		VkDescriptorPool descriptorPool;
 		std::vector<VkDescriptorSet> descriptorSets;
@@ -227,6 +237,8 @@ class VulkanApp {
 
 		void createUniformBuffers();
 
+		void prepareUniformBuffers();
+
 		void createDescriptorPool();
 
     	void createDescriptorSets();
@@ -238,6 +250,7 @@ class VulkanApp {
 		void initVulkan();
 
 		void updateUniformBuffer(uint32_t currentImage);
+		void updateDynamicUniformBuffer();
 		void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void drawFrame();
 

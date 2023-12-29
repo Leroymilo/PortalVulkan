@@ -20,6 +20,7 @@ class World {
 			std::vector<Vertex> *vertices,
 			std::vector<uint32_t> *indices
 		);
+		size_t get_nb_objects();
 		
 		std::vector<std::string> get_tex_names();
 		void set_descriptor_sets(std::unordered_map<std::string, std::vector<int>> &set_indices_map);

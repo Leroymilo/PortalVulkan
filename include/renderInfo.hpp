@@ -14,6 +14,7 @@ struct RenderInfo {
 	VkPipelineLayout pipeline_layout;
 	std::vector<VkDescriptorSet> descriptor_sets;
 	uint32_t current_frame;
+	uint32_t dynamicAlignment;
 };
 
 #endif //RENDER_INFO_HPP

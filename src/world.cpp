@@ -51,6 +51,10 @@ void World::get_geometry(
 	}
 }
 
+size_t World::get_nb_objects() {
+	return 1 + simple_brushes.size();
+}
+
 std::vector<std::string> World::get_tex_names() {
 	std::vector<std::string> tex_names;
 	std::unordered_set<std::string> tex_names_set;
@@ -99,7 +103,9 @@ void World::get_matrices(glm::mat4 *view) {
 }
 
 void World::cmd_draw_indexed(RenderInfo &render_info) {
+	uint32_t i = 0;
 	for (SimpleBrush &brush :simple_brushes) {
-		brush.cmd_draw_indexed(render_info);
+		brush.cmd_draw_indexed(render_info, i);
+		i++;
 	}
 }

@@ -370,7 +370,6 @@ bool GJK_fast(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> *simplex) {
 		dir = glm::normalize(glm::cross(B - A, C - A));
 		if (glm::dot(dir, A) > 0) dir = -dir;	// wrong plane normal
 		D = support(shape_a, shape_b, dir);
-		std::cout << "\t" << D.x << ", " << D.y << ", " << D.z << std::endl;
 		if (glm::dot(D, dir) < 0) return false;	// new point did not pass the origin
 		if (D == A || D == B || D == C) return false; // new point is one of previous points
 

@@ -630,22 +630,32 @@ void VulkanApp::createDescriptorSetLayout() {
     uboLayoutBinding.descriptorCount = 1;
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+    VkDescriptorSetLayoutBinding uboDynaLayoutBinding{};
+    uboDynaLayoutBinding.binding = 1;
+    uboDynaLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    uboDynaLayoutBinding.descriptorCount = 1;
+	uboDynaLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboDynaLayoutBinding.pImmutableSamplers = nullptr; // Optional
 	
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.binding = 2;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	
 	VkDescriptorSetLayoutBinding normalSamplerLayoutBinding{};
-	normalSamplerLayoutBinding.binding = 2;
+	normalSamplerLayoutBinding.binding = 3;
 	normalSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	normalSamplerLayoutBinding.descriptorCount = 1;
 	normalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	normalSamplerLayoutBinding.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding, samplerLayoutBinding, normalSamplerLayoutBinding};
+	std::array<VkDescriptorSetLayoutBinding, 4> bindings = {
+		uboLayoutBinding, uboDynaLayoutBinding,
+		samplerLayoutBinding, normalSamplerLayoutBinding
+	};
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1397,22 +1407,72 @@ void VulkanApp::createUniformBuffers() {
     uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+        createBuffer(
+			bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			uniformBuffers[i], uniformBuffersMemory[i]
+		);
 
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
     }
 }
 
+void* alignedAlloc(size_t size, size_t alignment)
+{
+	void *data = nullptr;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+	data = _aligned_malloc(size, alignment);
+#else
+	int res = posix_memalign(&data, alignment, size);
+	if (res != 0)
+		data = nullptr;
+#endif
+	return data;
+}
+
+void VulkanApp::prepareUniformBuffers() {
+	// Calculate required alignment based on minimum device offset alignment
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+	size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+	dynamicAlignment = sizeof(glm::mat4);
+	if (minUboAlignment > 0) {
+		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+	}
+
+	size_t bufferSize = world.get_nb_objects() * dynamicAlignment;
+  	uboDataDynamic.model = (glm::mat4*)alignedAlloc(bufferSize, dynamicAlignment);
+
+	createBuffer(
+		bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		uboDynamicBuffer, uboDynamicBufferMemory
+	);
+
+	vkMapMemory(device, uboDynamicBufferMemory, 0, bufferSize, 0, &uboDynamicMapped);
+
+	for (uint32_t index = 0; index < world.get_nb_objects(); index++)
+	{
+		// Aligned offset
+		glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic.model + (index * dynamicAlignment)));
+
+		// Update matrices
+		*modelMat = glm::mat4(1.0f);
+	}
+}
+
 void VulkanApp::createDescriptorPool() {
 	int nb_descriptor_sets = MAX_FRAMES_IN_FLIGHT * textures.size();
 	
-	std::array<VkDescriptorPoolSize, 3> poolSizes{};
+	std::array<VkDescriptorPoolSize, 4> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(nb_descriptor_sets);
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	poolSizes[1].descriptorCount = static_cast<uint32_t>(nb_descriptor_sets);
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[2].descriptorCount = static_cast<uint32_t>(nb_descriptor_sets);
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[3].descriptorCount = static_cast<uint32_t>(nb_descriptor_sets);
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1453,12 +1513,17 @@ void VulkanApp::createDescriptorSets() {
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			int ij = i + j * MAX_FRAMES_IN_FLIGHT;
 
-			std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = uniformBuffers[i];
 			bufferInfo.offset = 0;
 			bufferInfo.range = sizeof(UniformBufferObject);
+
+			VkDescriptorBufferInfo dynaBufferInfo{};
+			dynaBufferInfo.buffer = uboDynamicBuffer;
+			dynaBufferInfo.offset = 0;
+			dynaBufferInfo.range = sizeof(UboDataDynamic);
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1482,9 +1547,9 @@ void VulkanApp::createDescriptorSets() {
 			descriptorWrites[1].dstSet = descriptorSets[ij];
 			descriptorWrites[1].dstBinding = 1;
 			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
+			descriptorWrites[1].pBufferInfo = &dynaBufferInfo;
 
 			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[2].dstSet = descriptorSets[ij];
@@ -1492,7 +1557,15 @@ void VulkanApp::createDescriptorSets() {
 			descriptorWrites[2].dstArrayElement = 0;
 			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[2].descriptorCount = 1;
-			descriptorWrites[2].pImageInfo = &normMapInfo;
+			descriptorWrites[2].pImageInfo = &imageInfo;
+
+			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[3].dstSet = descriptorSets[ij];
+			descriptorWrites[3].dstBinding = 3;
+			descriptorWrites[3].dstArrayElement = 0;
+			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[3].descriptorCount = 1;
+			descriptorWrites[3].pImageInfo = &normMapInfo;
 
 			vkUpdateDescriptorSets(
 				device,
@@ -1558,6 +1631,7 @@ void VulkanApp::initVulkan() {
     createDescriptorSetLayout();
 	createGraphicsPipeline();
 	createCommandPool();
+	prepareUniformBuffers();
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
@@ -1623,7 +1697,8 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 		commandBuffer,
 		pipelineLayout,
 		descriptorSets,
-		currentFrame
+		currentFrame,
+		dynamicAlignment
 	};
 
 	// vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
@@ -1645,7 +1720,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 
 	UniformBufferObject ubo{};
 	// ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.model = glm::mat4(1.0f);
+	// ubo.model = glm::mat4(1.0f);
 
 	world.get_matrices(&ubo.view);
 
@@ -1655,6 +1730,31 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	ubo.proj[1][1] *= -1;
 
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+}
+
+void VulkanApp::updateDynamicUniformBuffer() {
+	uint32_t dim = static_cast<uint32_t>(pow(world.get_nb_objects(), (1.0f / 3.0f)));
+
+	for (uint32_t index = 0; index < world.get_nb_objects(); index++)
+	{
+		// Aligned offset
+		glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic.model + (index * dynamicAlignment)));
+
+		// Update matrices
+		*modelMat = glm::rotate(*modelMat, (float)((float)index * M_PI / 180.f), glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+
+	size_t bufferSize = world.get_nb_objects() * dynamicAlignment;
+
+	memcpy(uboDynamicMapped, uboDataDynamic.model, bufferSize);
+
+	// Flush to make changes visible to the host
+	VkMappedMemoryRange memoryRange;
+	memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+	memoryRange.memory = uboDynamicBufferMemory;
+	memoryRange.size = bufferSize;
+	memoryRange.pNext = nullptr;
+	vkFlushMappedMemoryRanges(device, 1, &memoryRange);
 }
 
 void VulkanApp::drawFrame() {
@@ -1680,6 +1780,7 @@ void VulkanApp::drawFrame() {
     recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
     updateUniformBuffer(currentFrame);
+	updateDynamicUniformBuffer();
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1824,6 +1925,9 @@ void VulkanApp::cleanup() {
         vkDestroyBuffer(device, uniformBuffers[i], nullptr);
         vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
     }
+
+	vkDestroyBuffer(device, uboDynamicBuffer, nullptr);
+	vkFreeMemory(device, uboDynamicBufferMemory, nullptr);
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
