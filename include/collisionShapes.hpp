@@ -37,7 +37,10 @@ namespace Collision {
 	class SmoothShape: public Shape {
 		// Defined as the Minkovski addition of a base Shape (of any specialisation) and a sphere centered in 0.
 
-		static_assert(std::is_base_of<Shape, BaseShape>::value, "BaseShape is not derived from Shape");
+		static_assert(
+			std::is_base_of<Shape, BaseShape>::value,
+			"BaseShape is not derived from Shape"
+		);
 
 		protected:
 			BaseShape base_shape;
@@ -57,8 +60,14 @@ namespace Collision {
 	class InterShape: public Shape {
 		// Defined as the intersection of 2 Shapes.
 
-		static_assert(std::is_base_of<Shape, ShapeA>::value, "ShapeA is not derived from Shape");
-		static_assert(std::is_base_of<Shape, ShapeB>::value, "ShapeB is not derived from Shape");
+		static_assert(
+			std::is_base_of<Shape, ShapeA>::value,
+			"ShapeA is not derived from Shape"
+		);
+		static_assert(
+			std::is_base_of<Shape, ShapeB>::value,
+			"ShapeB is not derived from Shape"
+		);
 
 		protected:
 			ShapeA shape_a;

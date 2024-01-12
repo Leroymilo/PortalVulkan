@@ -23,11 +23,11 @@ class Player {
 		void compute_transforms();
 
 	public:
-		void process_physics(GLFWwindow *window, float delta);
 		Collision::Sphere *get_collider_p();
-		void nudge(glm::vec4 dir_dist);
 		glm::mat4 get_model_matrix();
 		glm::mat4 get_view_matrix();
+		void process_physics(GLFWwindow *window, float delta);
+		void nudge(const glm::vec4 &dir_dist);
 };
 
 #endif //PLAYER_HPP

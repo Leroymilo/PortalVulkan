@@ -1,6 +1,6 @@
 # Blender 4.0.2
 # www.blender.org
-mtllib metal_box.mtl
+# mtllib metal_box.mtl
 o smd/metal_box_reference.smd
 v -0.097556 -0.296418 -0.197824
 v -0.141050 -0.339381 -0.242652

@@ -38,6 +38,17 @@ World::World() {
 			"concrete"
 		),
 	};
+
+	models.push_back(
+		Model(
+			"metal_box", "metal_box"
+		)
+	);
+
+	cubes.push_back(
+		Cube(&(models[0]), 0.1)
+	);
+	cubes[0].nudge(glm::vec4(0.f, 0.f, 1.f, 1.f));
 }
 
 void World::get_geometry(
@@ -49,10 +60,17 @@ void World::get_geometry(
 			printf("error while generating simple brush buffers!");
 		}
 	}
+
+	for (Model &model: models) {
+		if (!model.generate_buffers(vertices, indices)) {
+			printf("error while generating cubes buffers!");
+		}
+	}
 }
 
-size_t World::get_nb_objects() {
-	return 1 + simple_brushes.size();
+size_t World::count_dyna_ubo() {
+	return 1 + cubes.size();
+	// the first model matrix is identity
 }
 
 std::vector<std::string> World::get_tex_names() {
@@ -66,12 +84,23 @@ std::vector<std::string> World::get_tex_names() {
 		}
 	}
 
+	for (Model &model: models) {
+		if (tex_names_set.count(model.tex_name) == 0) {
+			tex_names.push_back(model.tex_name);
+			tex_names_set.insert(model.tex_name);
+		}
+	}
+
 	return tex_names;
 }
 
 void World::set_descriptor_sets(std::unordered_map<std::string, std::vector<int>> &set_indices_map) {
 	for (SimpleBrush &brush : simple_brushes) {
 		brush.set_descriptor_sets(set_indices_map[brush.tex_name]);
+	}
+
+	for (Model &model: models) {
+		model.set_descriptor_sets(set_indices_map[model.tex_name]);
 	}
 }
 
@@ -98,14 +127,46 @@ void World::process_physics(GLFWwindow *window) {
 	lastTime = currentTime;
 }
 
-void World::get_matrices(glm::mat4 *view) {
+
+
+void World::get_view(glm::mat4 *view) {
 	*view = player.get_view_matrix();
 }
 
+void World::set_model_matrix(
+	glm::mat4 *matrix_array,
+	uint32_t alignment, uint32_t index,
+	const glm::mat4 &new_matrix
+) {
+	glm::mat4* model_mat = (glm::mat4*)(((uint64_t)matrix_array + (index * alignment)));
+	*model_mat = new_matrix;
+}
+
+void World::fill_model_matrices(glm::mat4 *model_mat_array, uint32_t alignment) {
+	// identity matrix for brushes
+	set_model_matrix(
+		model_mat_array, alignment,
+		0, glm::mat4(1.f)
+	);
+
+	uint32_t i = 1;
+	for (PropInstance<Collision::Cube> &cube: cubes) {
+		set_model_matrix(
+			model_mat_array, alignment,
+			i, cube.get_matrix()
+		);
+		i++;
+	}
+}
+
 void World::cmd_draw_indexed(RenderInfo &render_info) {
-	uint32_t i = 0;
-	for (SimpleBrush &brush :simple_brushes) {
-		brush.cmd_draw_indexed(render_info, i);
+	for (SimpleBrush &brush: simple_brushes) {
+		brush.cmd_draw_indexed(render_info);
+	}
+
+	uint32_t i = 1;
+	for (PropInstance<Collision::Cube> &cube: cubes) {
+		cube.cmd_draw_indexed(render_info, i);
 		i++;
 	}
 }

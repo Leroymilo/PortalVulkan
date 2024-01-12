@@ -742,7 +742,7 @@ void VulkanApp::createGraphicsPipeline() {
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;	// VK_POLYGON_MODE_LINE is wireframe
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
@@ -1229,6 +1229,7 @@ Texture VulkanApp::createTexture(std::string tex_name) {
 	uint32_t nb_mip_levels;
 
 	int texWidth, texHeight, texChannels;
+	
 	stbi_uc* pixels = stbi_load(
 		("textures/" + tex_name + ".png").c_str(),
 		&texWidth, &texHeight, &texChannels,
@@ -1440,7 +1441,7 @@ void VulkanApp::prepareUniformBuffers() {
 		dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
 	}
 
-	size_t bufferSize = world.get_nb_objects() * dynamicAlignment;
+	size_t bufferSize = world.count_dyna_ubo() * dynamicAlignment;
   	uboDataDynamic.model = (glm::mat4*)alignedAlloc(bufferSize, dynamicAlignment);
 
 	createBuffer(
@@ -1451,7 +1452,7 @@ void VulkanApp::prepareUniformBuffers() {
 
 	vkMapMemory(device, uboDynamicBufferMemory, 0, bufferSize, 0, &uboDynamicMapped);
 
-	for (uint32_t index = 0; index < world.get_nb_objects(); index++)
+	for (uint32_t index = 0; index < world.count_dyna_ubo(); index++)
 	{
 		// Aligned offset
 		glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic.model + (index * dynamicAlignment)));
@@ -1644,6 +1645,8 @@ void VulkanApp::initVulkan() {
     createDescriptorSets();
 	createCommandBuffer();
 	createSyncObjects();
+
+	std::cout << "Finished Vulkan Initialisation" << std::endl;
 }
 
 void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -1722,7 +1725,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 	// ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	// ubo.model = glm::mat4(1.0f);
 
-	world.get_matrices(&ubo.view);
+	world.get_view(&ubo.view);
 
 	glfwGetWindowSize(window, &width, &height);
 
@@ -1733,18 +1736,18 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage) {
 }
 
 void VulkanApp::updateDynamicUniformBuffer() {
-	uint32_t dim = static_cast<uint32_t>(pow(world.get_nb_objects(), (1.0f / 3.0f)));
+	world.fill_model_matrices(uboDataDynamic.model, dynamicAlignment);
 
-	for (uint32_t index = 0; index < world.get_nb_objects(); index++)
-	{
-		// Aligned offset
-		glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic.model + (index * dynamicAlignment)));
+	// for (uint32_t index = 0; index < world.count_dyna_ubo(); index++)
+	// {
+	// 	// Aligned offset
+	// 	glm::mat4* modelMat = (glm::mat4*)(((uint64_t)uboDataDynamic.model + (index * dynamicAlignment)));
 
-		// Update matrices
-		*modelMat = glm::rotate(*modelMat, (float)((float)index * M_PI / 180.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	}
+	// 	// Update matrices
+	// 	*modelMat = glm::rotate(*modelMat, (float)((float)index * M_PI / 180.f), glm::vec3(0.0f, 0.0f, 1.0f));
+	// }
 
-	size_t bufferSize = world.get_nb_objects() * dynamicAlignment;
+	size_t bufferSize = world.count_dyna_ubo() * dynamicAlignment;
 
 	memcpy(uboDynamicMapped, uboDataDynamic.model, bufferSize);
 
@@ -1754,6 +1757,7 @@ void VulkanApp::updateDynamicUniformBuffer() {
 	memoryRange.memory = uboDynamicBufferMemory;
 	memoryRange.size = bufferSize;
 	memoryRange.pNext = nullptr;
+	memoryRange.offset = 0;
 	vkFlushMappedMemoryRanges(device, 1, &memoryRange);
 }
 

@@ -115,7 +115,7 @@ Collision::Sphere *Player::get_collider_p() {
 	return &collider;
 }
 
-void Player::nudge(glm::vec4 dir_dist) {
+void Player::nudge(const glm::vec4 &dir_dist) {
 	position -= glm::vec3(dir_dist) * dir_dist.w;
 	compute_transforms();
 }

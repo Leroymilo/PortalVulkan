@@ -23,7 +23,7 @@ class Brush {
 			std::vector<uint32_t> *indices
 		) = 0;
 		void set_descriptor_sets(std::vector<int> &set_indices);
-		void cmd_draw_indexed(RenderInfo &render_info, uint32_t uboDynamicIndex);
+		void cmd_draw_indexed(RenderInfo &render_info);
 };
 
 class SimpleBrush: public Brush {

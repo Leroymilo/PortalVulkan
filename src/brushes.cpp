@@ -14,16 +14,16 @@ void Brush::set_descriptor_sets(std::vector<int> &set_indices) {
 	this->descriptor_set_indices = set_indices;
 }
 
-void Brush::cmd_draw_indexed(RenderInfo &render_info, uint32_t uboDynamicIndex) {
+void Brush::cmd_draw_indexed(RenderInfo &render_info) {
 	int set_index = descriptor_set_indices[render_info.current_frame];
 	VkDescriptorSet descriptor_set = render_info.descriptor_sets[set_index];
 
-	uint32_t dynamicOffset = uboDynamicIndex * static_cast<uint32_t>(render_info.dynamicAlignment);
+	uint32_t dynamic_offset = 0;
 
 	vkCmdBindDescriptorSets(
 		render_info.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		render_info.pipeline_layout, 0, 1, &descriptor_set,
-		1, &dynamicOffset
+		1, &dynamic_offset
 	);
 
 	vkCmdDrawIndexed(

@@ -9,42 +9,38 @@
 #include "vertex.hpp"
 #include "renderInfo.hpp"
 #include "collisionShapes.hpp"
+#include "model.hpp"
 
-class Props {
-	private:
-		std::string obj_name;
 
-		uint32_t vertex_offset;
-		uint32_t first_index;
-		std::vector<int> descriptor_set_indices;
-
-	public:
-		std::string tex_name;
-
-		bool generate_buffers(
-			std::vector<Vertex> *vertices,
-			std::vector<uint32_t> *indices
-		);
-		void set_descriptor_sets(std::vector<int> &set_indices);
-		void cmd_draw_indexed(RenderInfo &render_info, uint32_t uboDynamicIndex);
-};
-
+template <class Collider>
 class PropInstance {
+
+	static_assert(
+		std::is_base_of<Collision::Shape, Collider>::value,
+		"Collider is not derived from Shape"
+	);
+
 	private:
 		glm::mat4 matrix = glm::mat4(1.f);
 
-	public:
-		Props props_info;
+	protected:
+		Collider collider;
+		Model *model;
 
-		void cmd_draw_indexed(RenderInfo &render_info, uint32_t uboDynamicIndex);
+	public:
+		PropInstance(Model *model, Collider collider);
+
+		const glm::mat4 &get_matrix();
+		Collider *get_collider_p();
+		void process_physics(float delta);
+		void nudge(const glm::vec4 &dir_dist);
+		void cmd_draw_indexed(RenderInfo &render_info, uint32_t ubo_dyna_index);
 };
 
-class Cube : public PropInstance {
-	private:
-		Collision::Cube collider = Collision::Cube(0.2);
+class Cube : public PropInstance<Collision::Cube> {
 
 	public:
-		Collision::AABox *get_collider_p();
+		Cube(Model *model, float size);
 };
 
 #endif //PROPS_HPP
