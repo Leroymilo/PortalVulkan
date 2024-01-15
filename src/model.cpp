@@ -29,7 +29,6 @@ bool Model::generate_buffers(
 	if (new_file.is_open()) {
 		std::string line;
 		while(getline(new_file, line)) {
-			std::cout << "current line : " << line << std::endl;
 			switch (line[0]) {
 				case 'v':
 					float x, y, z;
@@ -79,17 +78,18 @@ bool Model::generate_buffers(
 					}};
 
 					for (const Vertex &vert : verts) {
-						// if (used_vertices.count(vert) == 0) {
-						// 	// new vertex
-						// 	used_vertices.insert(std::make_pair(vert, used_vertices.size()));
-						// 	vertices->push_back(vert);
-						// }
-						indices->push_back(vertices->size());
-						vertices->push_back(vert);
+						auto iterator = used_vertices.find(vert);
+						if (iterator == used_vertices.end()) {
+							// new vertex
+							iterator = used_vertices.insert(
+								std::make_pair(vert, used_vertices.size())
+							).first;
+							vertices->push_back(vert);
+						}
+						indices->push_back(iterator->second);
 					}
 
 					index_count += 3;
-
 					break;
 			}
 		}
