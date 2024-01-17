@@ -11,9 +11,11 @@ namespace Collision {
 	class Shape {
 		protected:
 			glm::mat4 matrix = glm::mat4(1.0f);
+			glm::vec3 center = glm::vec3(0.f);
 		
 		public:
 			void set_transform(glm::mat4 new_matrix);
+			glm::vec3 get_center();
 			bool is_colliding(Shape *other);
 
 			virtual glm::vec3 support(const glm::vec3 &dir) = 0;

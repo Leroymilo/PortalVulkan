@@ -69,6 +69,8 @@ AAPrism::AAPrism(
 			}
 		);
 	}
+
+	// TODO : add center and test
 }
 
 Cube::Cube(float size): AABox(glm::vec3(-size/2.f), glm::vec3(size/2.f)) {}
@@ -103,6 +105,10 @@ void Shape::set_transform(glm::mat4 new_matrix) {
 	matrix = new_matrix;
 }
 
+glm::vec3 Shape::get_center() {
+	return glm::vec3(matrix * glm::vec4(center, 1.f));
+}
+
 void PointShape::print_points() {
 	for (glm::vec3 p : vertices) {
 		p = matrix * glm::vec4(p, 1);
@@ -134,7 +140,8 @@ glm::vec3 PointShape::support(const glm::vec3 &dir) {
 	// O(vertices.size()), should be optimized for specific shapes when possible
 
 	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
-	glm::vec3 best_point;
+	glm::vec3 sum_best_points;
+	uint nb_best_points;
 	float best_score = -FLT_MAX;
 	
 	for (const glm::vec3 &vertex : vertices) {
@@ -142,11 +149,17 @@ glm::vec3 PointShape::support(const glm::vec3 &dir) {
 
 		if (score > best_score) {
 			best_score = score;
-			best_point = vertex;
+			sum_best_points = vertex;
+			nb_best_points = 1;
+		}
+
+		else if (score == best_score) {
+			sum_best_points += vertex;
+			nb_best_points++;
 		}
 	}
 
-	return matrix * glm::vec4(best_point, 1);
+	return matrix * glm::vec4(sum_best_points / (float)nb_best_points, 1);
 }
 
 template <class BaseShape>

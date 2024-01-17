@@ -13,7 +13,7 @@ class Player {
 		Collision::Sphere collider = Collision::Sphere(0.1);
 		bool noclip = true;
 
-		glm::vec3 position = glm::vec3(0, 0, 1.8);
+		glm::vec3 position = glm::vec3(0, 2, 1.8);
 		float theta = 0;
 		float phi = 0;
 

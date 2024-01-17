@@ -21,7 +21,15 @@ class PropInstance {
 	);
 
 	private:
+		glm::vec3 position = glm::vec3(0.f);
+		glm::vec3 rotation = glm::vec3(0.f);
 		glm::mat4 matrix = glm::mat4(1.f);
+
+		float mass = 1;	// in grams
+		glm::vec3 speed = glm::vec3(0.f);
+		glm::vec3 rot_speed = glm::vec3(0.f);
+
+		void set_matrix(const glm::mat4 &new_matrix);
 
 	protected:
 		Collider collider;
@@ -31,9 +39,10 @@ class PropInstance {
 		PropInstance(Model *model, Collider collider);
 
 		const glm::mat4 &get_matrix();
+		void set_rot_pos(const glm::vec3 &new_pos, const glm::vec3 &new_rot);
 		Collider *get_collider_p();
 		void process_physics(float delta);
-		void nudge(const glm::vec4 &dir_dist);
+		void resolve(const glm::vec4 &dir_dist, float delta);
 		void cmd_draw_indexed(RenderInfo &render_info, uint32_t ubo_dyna_index);
 };
 
