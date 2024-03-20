@@ -48,11 +48,18 @@ World::World() {
 	cubes.push_back(
 		Cube(&(models[0]), 0.68)
 	);
-	
 	cubes[0].set_rot_pos(
 		glm::vec3(0, 0, 2),
 		(float)M_PI/4.f * glm::normalize(glm::vec3(1, 1, 0))
 	);
+
+	// cubes.push_back(
+	// 	Cube(&(models[0]), 0.68)
+	// );
+	// cubes[1].set_rot_pos(
+	// 	glm::vec3(0, 0, 5),
+	// 	(float)0 * glm::normalize(glm::vec3(0, 1, 1))
+	// );
 }
 
 void World::get_geometry(
@@ -115,7 +122,7 @@ void World::process_physics(GLFWwindow *window) {
 	// Compute time difference between current and last frame
 	double currentTime = glfwGetTime();
 	float deltaTime = float(currentTime - lastTime);
-	// deltaTime = 1.f/60.f;
+	deltaTime = std::min(deltaTime, 1.f/60.f);
 
 	player.process_physics(window, deltaTime);
 	
@@ -132,12 +139,24 @@ void World::process_physics(GLFWwindow *window) {
 		}
 	}
 
-	for (Cube &cube: cubes) {
+	for (int i = 0; i < cubes.size(); i++) {
+		Cube &cube = cubes[i];
 		Collision::Cube *cube_collider = cube.get_collider_p();
 
 		for (SimpleBrush &brush : simple_brushes) {
 			glm::vec4 dir_dist = Collision::resolve(cube_collider, brush.get_collider_p());
+			
 			if (dir_dist.w > 0) {
+				cube.resolve(dir_dist, deltaTime);
+			}
+		}
+
+		for (int j = 0; j < cubes.size(); j++) {
+			if (i == j) continue;
+
+			glm::vec4 dir_dist = Collision::resolve(cube_collider, cubes[j].get_collider_p());
+			if (dir_dist.w > 0) {
+				dir_dist.w /= 2;
 				cube.resolve(dir_dist, deltaTime);
 			}
 		}
@@ -159,6 +178,9 @@ void World::set_model_matrix(
 ) {
 	glm::mat4* model_mat = (glm::mat4*)(((uint64_t)matrix_array + (index * alignment)));
 	*model_mat = new_matrix;
+
+
+
 }
 
 void World::fill_model_matrices(glm::mat4 *model_mat_array, uint32_t alignment) {

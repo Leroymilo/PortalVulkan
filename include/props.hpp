@@ -11,6 +11,18 @@
 #include "collisionShapes.hpp"
 #include "model.hpp"
 
+struct Physics {
+	float mass;		// in grams
+	float inertia;	// in 
+
+	glm::vec3 position = glm::vec3(0.f);
+	glm::vec3 rotation = glm::vec3(0.f);
+	
+	glm::vec3 speed = glm::vec3(0.f);
+	glm::vec3 rot_speed = glm::vec3(0.f);
+
+	glm::mat4 get_matrix();
+};
 
 template <class Collider>
 class PropInstance {
@@ -21,13 +33,18 @@ class PropInstance {
 	);
 
 	private:
-		glm::vec3 position = glm::vec3(0.f);
-		glm::vec3 rotation = glm::vec3(0.f);
-		glm::mat4 matrix = glm::mat4(1.f);
+		Physics physics_props = {5, 5};
+		Physics prev_ph_props = physics_props;
 
-		float mass = 1;	// in grams
-		glm::vec3 speed = glm::vec3(0.f);
-		glm::vec3 rot_speed = glm::vec3(0.f);
+		// glm::vec3 position = glm::vec3(0.f);
+		// glm::vec3 rotation = glm::vec3(0.f);
+		// glm::mat4 matrix = glm::mat4(1.f);
+
+		// float mass = 5;	// in grams
+		// glm::vec3 speed = glm::vec3(0.f);
+		// glm::vec3 rot_speed = glm::vec3(0.f);
+
+		std::vector<glm::vec3> contact_points;
 
 		void set_matrix(const glm::mat4 &new_matrix);
 
@@ -38,7 +55,7 @@ class PropInstance {
 	public:
 		PropInstance(Model *model, Collider collider);
 
-		const glm::mat4 &get_matrix();
+		const glm::mat4 get_matrix();
 		void set_rot_pos(const glm::vec3 &new_pos, const glm::vec3 &new_rot);
 		Collider *get_collider_p();
 		void process_physics(float delta);
