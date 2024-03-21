@@ -84,8 +84,13 @@ namespace Collision {
 	// Classes to help define common shapes
 
 	class AABox: public PointShape {
+		private:
+			glm::vec3 min_point;
+			glm::vec3 max_point;
+
 		public:
 			AABox(const glm::vec3 &min_point, const glm::vec3 &max_point);
+			glm::vec3 support(const glm::vec3 &dir) override;
 	};
 
 	class AAPrism: public PointShape {

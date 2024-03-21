@@ -45,6 +45,9 @@ SmoothShape<BaseShape>::SmoothShape(const BaseShape base_shape, float radius):
 }
 
 AABox::AABox(const glm::vec3 &min_point, const glm::vec3 &max_point) {
+	this->min_point = min_point;
+	this->max_point = max_point;
+
 	vertices.clear();
 	
 	for (uint i = 0; i < 8; i++) {
@@ -160,6 +163,20 @@ glm::vec3 PointShape::support(const glm::vec3 &dir) {
 	}
 
 	return matrix * glm::vec4(sum_best_points / (float)nb_best_points, 1);
+}
+
+glm::vec3 AABox::support(const glm::vec3 &dir) {
+	// faster support function for AABox (instead of iterating over vertices)
+	
+	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
+	glm::vec3 values[3] = {min_point, glm::vec3(0), max_point};
+
+	glm::vec3 result;
+	for (int i = 0; i < 3; i++) {
+		result[i] = values[ signum(local_dir[i]) + 1 ][i];
+	}
+
+	return matrix * glm::vec4(result, 1);
 }
 
 template <class BaseShape>
