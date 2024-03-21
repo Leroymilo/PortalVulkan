@@ -47,6 +47,7 @@ SmoothShape<BaseShape>::SmoothShape(const BaseShape base_shape, float radius):
 AABox::AABox(const glm::vec3 &min_point, const glm::vec3 &max_point) {
 	this->min_point = min_point;
 	this->max_point = max_point;
+	center = (min_point + max_point) / 2.0f;
 
 	vertices.clear();
 	
@@ -168,8 +169,9 @@ glm::vec3 PointShape::support(const glm::vec3 &dir) {
 glm::vec3 AABox::support(const glm::vec3 &dir) {
 	// faster support function for AABox (instead of iterating over vertices)
 	
+	
 	glm::vec3 local_dir = glm::inverse(matrix) * glm::vec4(dir, 0);
-	glm::vec3 values[3] = {min_point, glm::vec3(0), max_point};
+	glm::vec3 values[3] = {min_point, center, max_point};
 
 	glm::vec3 result;
 	for (int i = 0; i < 3; i++) {
@@ -209,18 +211,21 @@ glm::vec3 Cylinder::support(const glm::vec3 &dir) {
 
 // Collision Detection ===========================================================================
 
-glm::vec3 closest_on_line(std::vector<glm::vec3> *simplex) {
-	// vertices
+glm::vec3 closest_on_line(std::vector<glm::vec3> *simplex, bool skip = false) {
 	glm::vec3 &A = (*simplex)[0];
 	glm::vec3 &B = (*simplex)[1];
 	glm::vec3 AB = B - A;
-	if (glm::dot(AB, A) >= 0) {
-		simplex->assign({A});
-		return A;
-	}
-	if (glm::dot(AB, B) <= 0) {
-		simplex->assign({B});
-		return B;
+
+	// vertices
+	if (!skip) {
+		if (glm::dot(AB, A) >= 0) {
+			simplex->assign({A});
+			return A;
+		}
+		if (glm::dot(AB, B) <= 0) {
+			simplex->assign({B});
+			return B;
+		}
 	}
 
 	// edge
@@ -228,17 +233,19 @@ glm::vec3 closest_on_line(std::vector<glm::vec3> *simplex) {
 	return A - glm::dot(d, A) * d;
 }
 
-glm::vec3 closest_on_triangle(std::vector<glm::vec3> *simplex) {
+glm::vec3 closest_on_triangle(std::vector<glm::vec3> *simplex, bool skip = false) {
 	// vertices
-	for (int i = 0; i < 3; i++) {
-		glm::vec3 &A = (*simplex)[i];
-		
-		if (
-			glm::dot(A, (*simplex)[(i+1)%3] - A) >= 0 &&
-			glm::dot(A, (*simplex)[(i+2)%3] - A) >= 0
-		) {
-			simplex->assign({A});
-			return A;
+	if (!skip) {
+		for (int i = 0; i < 3; i++) {
+			glm::vec3 &A = (*simplex)[i];
+			
+			if (
+				glm::dot(A, (*simplex)[(i+1)%3] - A) >= 0 &&
+				glm::dot(A, (*simplex)[(i+2)%3] - A) >= 0
+			) {
+				simplex->assign({A});
+				return A;
+			}
 		}
 	}
 
@@ -248,13 +255,15 @@ glm::vec3 closest_on_triangle(std::vector<glm::vec3> *simplex) {
 	));
 
 	// edges
-	for (int i = 0; i < 3; i++) {
-		glm::vec3 &A = (*simplex)[i];
-		glm::vec3 &B = (*simplex)[(i+1)%3];
+	if (!skip) {
+		for (int i = 0; i < 3; i++) {
+			glm::vec3 &A = (*simplex)[i];
+			glm::vec3 &B = (*simplex)[(i+1)%3];
 
-		if (glm::dot(glm::cross(normal, A - B), B) <= 0) {
-			simplex->assign({A, B});
-			return closest_on_line(simplex);
+			if (glm::dot(glm::cross(normal, A - B), B) <= 0) {
+				simplex->assign({A, B});
+				return closest_on_line(simplex);
+			}
 		}
 	}
 
@@ -306,7 +315,7 @@ glm::vec3 closest(std::vector<glm::vec3> *simplex) {
 			glm::dot(ABD, A) * glm::dot(ABD, AC) >= 0
 		) {
 			simplex->assign({A, B});
-			return closest_on_line(simplex);
+			return closest_on_line(simplex, true);
 		}
 	}
 
@@ -321,7 +330,7 @@ glm::vec3 closest(std::vector<glm::vec3> *simplex) {
 
 		if (glm::dot(ABC, A) * glm::dot(ABC, AD) >= 0) {
 			simplex->assign({A, B, C});
-			return closest_on_triangle(simplex);
+			return closest_on_triangle(simplex, true);
 		}
 	}
 
@@ -583,7 +592,7 @@ glm::vec4 EPA(Shape *shape_a, Shape *shape_b, std::vector<glm::vec3> &vertices) 
 		}
 	}
 
-	normals[best_face].w += EPSILON;
+	// normals[best_face].w += EPSILON;
 	return normals[best_face];
 }
 

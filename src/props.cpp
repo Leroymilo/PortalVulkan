@@ -57,7 +57,7 @@ void PropInstance<Collider>::process_physics(float delta) {
 	if (abs_rot_sp > 0)
 		physics_props.rot_speed -= 0.1f * glm::normalize(physics_props.rot_speed) * powf(glm::length(physics_props.rot_speed), 2.f);
 
-	physics_props.position += physics_props.speed * delta;
+	physics_props.position += physics_props.speed * delta + 0.5f * 9.81f * delta * delta * glm::vec3(0, 0, -1);
 	physics_props.rotation += physics_props.rot_speed * delta;	// according to SO
 
 	collider.set_transform(physics_props.get_matrix());

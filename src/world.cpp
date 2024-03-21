@@ -49,17 +49,17 @@ World::World() {
 		Cube(&(models[0]), 0.68)
 	);
 	cubes[0].set_rot_pos(
-		glm::vec3(0, 0, 2),
+		glm::vec3(0, 0, 4),
 		(float)M_PI/4.f * glm::normalize(glm::vec3(1, 1, 0))
 	);
 
-	// cubes.push_back(
-	// 	Cube(&(models[0]), 0.68)
-	// );
-	// cubes[1].set_rot_pos(
-	// 	glm::vec3(0, 0, 5),
-	// 	(float)0 * glm::normalize(glm::vec3(0, 1, 1))
-	// );
+	cubes.push_back(
+		Cube(&(models[0]), 0.68)
+	);
+	cubes[1].set_rot_pos(
+		glm::vec3(0, 0, 7),
+		(float)0 * glm::normalize(glm::vec3(0, 1, 1))
+	);
 }
 
 void World::get_geometry(
@@ -140,6 +140,7 @@ void World::process_physics(GLFWwindow *window) {
 	}
 
 	for (int i = 0; i < cubes.size(); i++) {
+
 		Cube &cube = cubes[i];
 		Collision::Cube *cube_collider = cube.get_collider_p();
 

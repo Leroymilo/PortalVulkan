@@ -11,7 +11,7 @@ layout(location = 4) in mat3 TBN;
 
 layout(location = 0) out vec4 outColor;
 
-const vec3 lightPos = vec3(-2, 2, 4);
+const vec3 lightPos = vec3(-2, 2, 4.1);
 const float lightPow = 40;
 
 const float PI = 3.1415926535897932384626433;
